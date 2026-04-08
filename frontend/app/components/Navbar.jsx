@@ -4,7 +4,7 @@ import { Link } from "react-router";
 const menuLinks = [
   { label: "Início", href: "/" },
   { label: "Reservar Sala", href: "/" },
-  { label: "Área do Diretor", href: "/diretor" },
+  { label: "Área do Coordenador", href: "/coordenador" },
   { label: "Contato", href: "/contato" },
 ];
 

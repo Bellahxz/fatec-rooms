@@ -715,8 +715,7 @@ body {
   background: rgba(0, 0, 0, 0.5);
   z-index: 200;
   display: flex;
-  align-items: flex-end;
-  max-width: 430px;
+  align-items: center;
   margin: 0 auto;
   animation: fadeUp 0.2s ease;
 }
