@@ -11,7 +11,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-
 import java.time.LocalDateTime;
 
 @Service
@@ -59,11 +58,12 @@ public class AuthService {
     }
 
     /**
-     * Login livre para qualquer usuário já aprovado.
-     * A aprovação acontece uma única vez no cadastro — depois disso o login é irrestrito.
+     * Login por e-mail institucional.
+     * Internamente busca o username pelo email e autentica normalmente via Spring Security.
      */
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByUsername(request.getUsername())
+        // Busca o usuário pelo email informado
+        User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new BadCredentialsException("Usuário ou senha inválidos."));
 
         // Verificação antecipada: cadastro ainda não aprovado
@@ -71,12 +71,12 @@ public class AuthService {
             throw new DisabledException("Seu cadastro ainda não foi aprovado por um coordenador.");
         }
 
-        // Valida senha — lança BadCredentialsException se errada
+        // Autentica usando o username internamente (Spring Security trabalha com username)
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(user.getUsername(), request.getPassword())
         );
 
-        UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
+        UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
         String token = jwtService.generateToken(userDetails);
 
         user.setLastlogin(LocalDateTime.now());
