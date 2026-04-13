@@ -1,0 +1,13 @@
+FROM eclipse-temurin:17-jdk-alpine
+WORKDIR /app
+
+COPY .mvn/ .mvn/
+COPY mvnw pom.xml ./
+RUN chmod +x mvnw && sed -i 's/\r$//' mvnw
+RUN ./mvnw dependency:go-offline -q
+
+COPY src ./src
+
+EXPOSE 8080
+
+CMD ["./mvnw", "spring-boot:run", "-Dspring-boot.run.jvmArguments=-Dspring.devtools.restart.enabled=true"]
