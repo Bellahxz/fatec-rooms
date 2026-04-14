@@ -1401,17 +1401,26 @@ button.menu-card {
 /* ══════════════════════════════════════════
 SOLICITAÇÕES DE RESERVA 
 ══════════════════════════════════════════ */
+.content-solicitarReserva{
+    padding: 40px 24px 32px;
+    background: var(--white);
+    display: flex;
+    gap: 50px;
+    justify-content: center;
+  }
+  
+
 .div-calendario{
   gap: 12px;
   padding: 10px;
-  width: 100%;
-  height: 40%;
-  background:orange;
+  padding-left: 20px;
+  width: 700px;
+  height: auto;
+  background:var(--gray-100);
   border-radius: var(--radius-lg);
   border: 3px transparent solid;
   margin:10px;
   align-items: center;
-  justify-items: center
 
 }
 .title-calendario{
@@ -1425,30 +1434,94 @@ SOLICITAÇÕES DE RESERVA
   margin-bottom: 8px;
 }
 
-/*calendario*/
-.react-calendar {
-  width: 100%;
-  border: none;
-  font-family: inherit;
+
+.reservas-feitas {
+  width: 90%;
+  max-height: 200px;
+  background-color: var(--white);
+  padding: 16px;
+  margin: 10px;
+  border-radius: 16px;
+  border: 1px solid var(--gray-200);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+
+  display: flex;
+  flex-direction: column;
 }
 
-/* reservas feita */
+.reservas-feitas h4 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--gray-800);
+}
+
+.lista-horarios {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.lista-horarios p {
+  background: var(--gray-100);
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--gray-700);
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  transition: 0.2s;
+}
+
+.lista-horarios p:hover {
+  background: var(--gray-200);
+}
+
+.hora {
+  font-weight: 600;
+  color: #3f51b5;
+}
+
+.prof {
+  font-size: 13px;
+  color: var(--gray-600);
+}
+
+.lista-horarios::-webkit-scrollbar {
+  width: 6px;
+}
+
+.lista-horarios::-webkit-scrollbar-thumb {
+  background: var(--gray-300);
+  border-radius: 10px;
+}
+/*calendario*/
+
 .react-calendar {
   width: 100%;
   max-width: 540px;
+  height: 400px;
   background: var(--white);
   border-radius: var(--radius-lg);
   padding: 20px;
   font-family: var(--font-body);
   border: 2px solid var(--red);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  border: none;
+  font-family: inherit;
+  margin-left: 10px;
 }
 
 .react-calendar__navigation button:nth-child(1),
 .react-calendar__navigation button:nth-child(2),
 .react-calendar__navigation button:nth-child(4),
-.react-calendar__navigation button:nth-child(5){
+.react-calendar__navigation button:nth-child(5)
+{
   display: none;
 }
 
@@ -1458,36 +1531,127 @@ SOLICITAÇÕES DE RESERVA
   align-items: center;
   position: relative;
   margin-bottom: 15px;
+  width: 40%;
+  color: var;
 }
 
 .react-calendar__navigation__label {
   font-size: 15px;
   font-weight: 600;
   padding: 6px;
-  
+  border-radius: 1.5rem;
+  border: 1px solid var(--white);
   background: linear-gradient(90deg, var(--red-light), var(--red-dark));
-  color: var(--gray-800);
-  pointer-events: none; /* evita clique estranho */
+  color: var(--white);
 }
 
-.dia-aceita {
-    background: #4CAF50 !important;
-    color: var(--white);
+/*dias da  semena*/
+.react-calendar__month-view__weekdays {
+  display: grid !important;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  margin-bottom: 8px;
+}
+.react-calendar__month-view__weekdays__weekday {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray-600);
+  padding: 6px 0;
 }
 
-.dia-pendente {
-    background: var(--yellow) !important;
-    color: var(--white);
+.react-calendar__month-view__weekdays__weekday abbr {
+  text-decoration: none;
 }
 
-.dia-cancelada {
-    background: var(--red) !important;
-    color: var(--white);
+.react-calendar__month-view__weekdays {
+  border-bottom: 1px solid var(--gray-200);
+  padding-bottom: 6px;
+}
+
+.react-calendar__month-view__weekdays__weekday:first-child {
+  color: #c62828;
+}
+
+/*dias */
+
+.react-calendar__month-view__days {
+  display: grid !important;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.react-calendar__tile {
+  height: 42px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  position: relative;
+}
+.react-calendar__tile:hover {
+  background: var(--gray-100);
+}
+
+.react-calendar__tile--now {
+  border: 2px solid var(--red-dark);
+  font-weight: bold;
 }
 
 .react-calendar__tile--active {
-    background: #a1a1a1 !important;
-    color: var(--white);
+  background: #067cdddc !important;
+  color: white;
+  font-weight: 600;
+}
+
+.react-calendar__month-view__days__day--neighboringMonth {
+  color: #ccc;
+}
+
+.dia-aceita::after,
+.dia-pendente::after,
+.dia-cancelada::after {
+  content: "";
+  position: absolute;
+  bottom: 5px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* cores */
+.dia-aceita::after {
+  background: #4CAF50;
+}
+
+.dia-pendente::after {
+  background: #FFC107;
+}
+
+.dia-cancelada::after {
+  background: #F44336;
+}
+
+.dia-selecionado {
+  background: #9E9E9E !important;
+  color: white;
+}
+
+.react-calendar__tile:disabled {
+  background: transparent;
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+.react-calendar__viewContainer {
+  transition: all 0.3s ease;
 }
 
 /*legenda*/
@@ -1495,8 +1659,17 @@ SOLICITAÇÕES DE RESERVA
 .legenda {
     display: flex;
     gap: 15px;
-    margin-top: 10px;
+    margin-top: 18px;
     font-size: 14px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-left: 20px;
+    margin-bottom: 10px;
+}
+
+.legenda > div {
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .box {
@@ -1511,14 +1684,13 @@ SOLICITAÇÕES DE RESERVA
 .amarelo { background: var(--yellow); }
 .vermelho { background: var(--red); }
 .cinza { background: #9E9E9E; }
-
 /* forms */
 .div-forms-reserva{
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 20px;
-  width: 100%;
+  width: 50%;
   height: 40%;
   background: var(--gray-100);
   border-radius: var(--radius-lg);
@@ -1564,6 +1736,8 @@ margin:10px;
     margin-right: 25px;
     padding: 10px;
   }
+
+  
 }
 
 .form-group-reserva label {
@@ -1620,54 +1794,164 @@ margin:10px;
 .btn-submit-reserva:hover { background-color: var(--red-dark); }
 
 /* //modal */
+/* overlay */
 .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0,0,0,0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 999;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  z-index: 999;
 }
 
-.modal {
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    width: 300px;
-    text-align: center;
+/* caixa principal */
+.modal-espacos {
+  width: min(560px, 100%);
+  max-height: 90vh;
+  overflow: hidden;
+  background: #f5f3f3;
+  border: 2px solid #b30000;
+  border-radius: 30px;
+  padding: 24px 22px 20px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.2);
 }
 
+/* topo */
+.modal-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  gap: 12px;
+}
+
+.modal-topo h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111;
+}
+
+.btn-close-modal {
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  color: #8b0000;
+}
+
+/* abas */
+.modal-tabs {
+  display: flex;
+  gap: 14px;
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  border-bottom: 2px solid #c62828;
+  overflow-x: auto;
+}
+
+.modal-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-btn {
+  min-width: 125px;
+  padding: 10px 16px;
+  border: 2px solid #b30000;
+  border-radius: 999px;
+  background: #fff;
+  color: #4a2d2d;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: 0.2s ease;
+}
+
+.tab-btn.active {
+  background: #b30000;
+  color: #fff;
+}
+
+/* lista */
 .lista-salas {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin: 15px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 52vh;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .btn-sala {
-    padding: 10px;
-    border: none;
-    background: #007bff;
-    color: white;
-    border-radius: 5px;
-    cursor: pointer;
+  width: 100%;
+  border: none;
+  background: #ece8e8;
+  border-radius: 4px;
+  padding: 20px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+  cursor: pointer;
+  transition: 0.2s ease;
 }
 
 .btn-sala:hover {
-    background: #0056b3;
+  background: #e3dede;
+  transform: translateY(-1px);
 }
 
-.btn-fechar {
-    margin-top: 10px;
-    background: red;
-    color: white;
-    border: none;
-    padding: 8px;
-    border-radius: 5px;
+.sala-nome {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+}
+
+.sala-andar {
+  font-size: 15px;
+  color: #2d2d2d;
+  white-space: nowrap;
+}
+
+.sem-salas {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-size: 15px;
+}
+
+/* mobile */
+@media (max-width: 480px) {
+  .modal-espacos {
+      padding: 20px 16px 16px;
+      border-radius: 22px;
+  }
+
+  .modal-topo h2 {
+      font-size: 12px;
+  }
+
+  .tab-btn {
+      min-width: 110px;
+      font-size: 12px;
+      padding: 9px 14px;
+  }
+
+  .btn-sala {
+      padding: 16px 14px;
+  }
+
+  .sala-nome {
+      font-size: 12px;
+  }
+
+  .sala-andar {
+      font-size: 12px;
+  }
 }
 
 /* ══════════════════════════════════════════
