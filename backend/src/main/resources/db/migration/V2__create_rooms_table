@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS rooms (
+    room_id   INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    user_id   INT UNSIGNED DEFAULT 0,
+    name      VARCHAR(120)  NOT NULL,
+    location  VARCHAR(255)  DEFAULT NULL,
+    bookable  TINYINT UNSIGNED NOT NULL DEFAULT 1,
+    notes     TEXT          DEFAULT NULL,
+    PRIMARY KEY (room_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS bookings (
+    booking_id      INT UNSIGNED    NOT NULL AUTO_INCREMENT,
+    room_id         INT UNSIGNED    NOT NULL,
+    user_id         INT UNSIGNED    NOT NULL,
+    period_id       INT UNSIGNED    NOT NULL,
+    booking_date    DATE            NOT NULL,
+    subject         VARCHAR(150)    NOT NULL,
+    notes           TEXT            DEFAULT NULL,
+    status          ENUM('PENDING','APPROVED','REJECTED','CANCELLED') NOT NULL DEFAULT 'PENDING',
+    reviewed_by     INT UNSIGNED    DEFAULT NULL,
+    reviewed_at     DATETIME        DEFAULT NULL,
+    reject_reason   VARCHAR(255)    DEFAULT NULL,
+    created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (booking_id),
+    INDEX idx_bookings_room_date    (room_id, booking_date),
+    INDEX idx_bookings_user         (user_id),
+    INDEX idx_bookings_status       (status),
+    CONSTRAINT fk_bookings_room     FOREIGN KEY (room_id)    REFERENCES rooms(room_id)     ON DELETE RESTRICT,
+    CONSTRAINT fk_bookings_user     FOREIGN KEY (user_id)    REFERENCES users(user_id)     ON DELETE RESTRICT,
+    CONSTRAINT fk_bookings_period   FOREIGN KEY (period_id)  REFERENCES periods(period_id) ON DELETE RESTRICT,
+    CONSTRAINT fk_bookings_reviewer FOREIGN KEY (reviewed_by) REFERENCES users(user_id)    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
