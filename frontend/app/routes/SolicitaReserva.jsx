@@ -4,7 +4,7 @@ import Navbar from "../components/Navbar";
 import PageHero from "../components/PageHero";
 import Footer from "../components/Footer";
 import Calendar from "react-calendar";
-import "react-calendar/dist/Calendar.css";
+// import "react-calendar/dist/Calendar.css";
 
 export default function SolicitaReserva() {
     const navigate = useNavigate();
@@ -25,6 +25,12 @@ export default function SolicitaReserva() {
         disciplina: "",
         naoSeAplica: false,
     });
+    const reservas = {
+        "2026-04-04": "aceita",
+        "2026-04-09": "pendente",
+        "2026-03-24": "selecionado",
+        "2026-04-27": "cancelada",
+    };
 
     function buscarSalasDisponiveis(data) {
         // simulação
@@ -62,33 +68,49 @@ export default function SolicitaReserva() {
             <div className="content">
 
                 <div className="div-calendario">
-                    <h3>Minhas Reservas:</h3>
-                    <p>Selecione uma data para iniciar uma reserva.</p>
+                    <div className="title-calendario">
+                        <h3>Minhas Reservas:</h3>
+                        <p>Selecione uma data para iniciar uma reserva.</p>
+                    </div>
+                    
+                    
                     {/* calendario */}
                     <Calendar
+                    
                         onChange={(value) => {
                             setDate(value);
 
-                            const dia = String(value.getDate()).padStart(2, "0");
-                            const mes = String(value.getMonth() + 1).padStart(2, "0");
-                            const ano = value.getFullYear();
-
-                            const dataFormatada = `${dia}/${mes}/${ano}`;
+                            const dataISO = value.toISOString().split("T")[0];
 
                             setForm((prev) => ({
                                 ...prev,
-                                data: dataFormatada,
+                                data: value.toLocaleDateString("pt-BR"),
                             }));
 
-                            // buscar salas
-                            const listaSalas = buscarSalasDisponiveis(dataFormatada);
+                            const listaSalas = buscarSalasDisponiveis(dataISO);
                             setSalas(listaSalas);
-
-                            // abrir modal
                             setModalOpen(true);
                         }}
+
                         value={date}
+
+                        tileClassName={({ date }) => {
+                            const dataISO = date.toISOString().split("T")[0];
+                            const status = reservas[dataISO];
+
+                            if (status === "aceita") return "dia-aceita";
+                            if (status === "pendente") return "dia-pendente";
+                            if (status === "cancelada") return "dia-cancelada";
+
+                            return null;
+                        }}
                     />
+                    <div className="legenda">
+                        <div><span className="box verde"></span> Aceita</div>
+                        <div><span className="box amarelo"></span> Pendente</div>
+                        <div><span className="box vermelho"></span> Cancelada</div>
+                        <div><span className="box cinza"></span> Selecionado</div>
+                    </div>
 
                 </div>
 

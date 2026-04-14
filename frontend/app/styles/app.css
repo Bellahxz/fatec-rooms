@@ -1403,22 +1403,116 @@ SOLICITAÇÕES DE RESERVA
 ══════════════════════════════════════════ */
 .div-calendario{
   gap: 12px;
-  padding: 20px;
+  padding: 10px;
   width: 100%;
   height: 40%;
-  background: var(--gray-100);
+  background:orange;
   border-radius: var(--radius-lg);
   border: 3px transparent solid;
   margin:10px;
   align-items: center;
+  justify-items: center
 
 }
-.div-calendario p{
+.title-calendario{
+  width: 100%;
+  padding: 8px 0px 5px 20px;
+
+}
+.title-calendario p{
   font-size: 14px;
   color: var(--gray-500);
   margin-bottom: 8px;
 }
 
+/*calendario*/
+.react-calendar {
+  width: 100%;
+  border: none;
+  font-family: inherit;
+}
+
+/* reservas feita */
+.react-calendar {
+  width: 100%;
+  max-width: 540px;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  font-family: var(--font-body);
+  border: 2px solid var(--red);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+
+}
+
+.react-calendar__navigation button:nth-child(1),
+.react-calendar__navigation button:nth-child(2),
+.react-calendar__navigation button:nth-child(4),
+.react-calendar__navigation button:nth-child(5){
+  display: none;
+}
+
+.react-calendar__navigation {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  margin-bottom: 15px;
+}
+
+.react-calendar__navigation__label {
+  font-size: 15px;
+  font-weight: 600;
+  padding: 6px;
+  
+  background: linear-gradient(90deg, var(--red-light), var(--red-dark));
+  color: var(--gray-800);
+  pointer-events: none; /* evita clique estranho */
+}
+
+.dia-aceita {
+    background: #4CAF50 !important;
+    color: var(--white);
+}
+
+.dia-pendente {
+    background: var(--yellow) !important;
+    color: var(--white);
+}
+
+.dia-cancelada {
+    background: var(--red) !important;
+    color: var(--white);
+}
+
+.react-calendar__tile--active {
+    background: #a1a1a1 !important;
+    color: var(--white);
+}
+
+/*legenda*/
+
+.legenda {
+    display: flex;
+    gap: 15px;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+.box {
+    display: inline-block;
+    width: 15px;
+    height: 15px;
+    border-radius: 4px;
+    margin-right: 5px;
+}
+
+.verde { background: #4CAF50; }
+.amarelo { background: var(--yellow); }
+.vermelho { background: var(--red); }
+.cinza { background: #9E9E9E; }
+
+/* forms */
 .div-forms-reserva{
   display: flex;
   align-items: center;
@@ -1432,19 +1526,19 @@ SOLICITAÇÕES DE RESERVA
 margin:10px;
   justify-content: center;
 }
-.horario{
-  display: flex;
-  flex-direction: row;
-  gap: 12px;
-  align-items: center;
-}
 
-/* forms */
 .form-group-reserva {
   margin-bottom: 12px;
   margin-left: 85px;
   margin-right: 85px;
   padding: 10px;
+}
+
+.horario{
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  align-items: center;
 }
 
 .form-group-reserva-check{
