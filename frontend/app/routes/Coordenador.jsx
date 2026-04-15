@@ -106,7 +106,7 @@ export default function Coordenador() {
   useEffect(() => {
     const authlevel = localStorage.getItem('authlevel');
     if (authlevel !== '1') {
-      navigate('/home');
+      navigate('/');
     }
   }, [navigate]);
 

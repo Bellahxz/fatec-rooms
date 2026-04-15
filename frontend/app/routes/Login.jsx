@@ -55,7 +55,7 @@ export default function Login() {
             if (data.authlevel === 1) {
                 navigate('/coordenador');
             } else {
-                navigate('/home');
+                navigate('/professor');
             }
         } catch (err) {
             setError(err.message);
