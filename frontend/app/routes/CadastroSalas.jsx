@@ -5,8 +5,8 @@ import PageHero from "../components/PageHero";
 
 export default function CadastroSalas() {
   const [form, setForm] = useState({
-    nome: "",
     tipo: "Sala",
+    numero: "",
     andar: "",
     computadores: "",
     carteiras: "",
@@ -16,6 +16,7 @@ export default function CadastroSalas() {
 
   const [salas, setSalas] = useState([]);
   const [notificacao, setNotificacao] = useState(null);
+  const [semNumero, setSemNumero] = useState(false);
 
   function handleChange(e) {
     const { name, value, type, checked } = e.target;
@@ -116,29 +117,85 @@ export default function CadastroSalas() {
 
           <form onSubmit={handleSubmit} className="cadastro-sala-form">
 
-            {/* Nome */}
-            <div className="form-group-cadastro">
-              <label>Nome da Sala</label>
-              <input
-                type="text"
-                name="nome"
-                value={form.nome}
-                onChange={handleChange}
-                placeholder="Ex: Sala 101"
-                required
-              />
-            </div>
-
             {/* Tipo */}
             <div className="form-group-cadastro">
               <label>Tipo de Sala</label>
+
               <div className={`tipo-wrapper tipo-${form.tipo}`}>
                 <select name="tipo" value={form.tipo} onChange={handleChange}>
                   <option value="Sala">Sala</option>
                   <option value="Laboratório">Laboratório</option>
                   <option value="Auditório">Auditório</option>
+                  <option value="Outro">Outro</option>
                 </select>
               </div>
+
+              {/* Campo extra se for "Outro" */}
+              {form.tipo === "Outro" && (
+                <input
+                  type="text"
+                  name="tipoOutro"
+                  placeholder="Digite o tipo da sala"
+                  value={form.tipoOutro || ""}
+                  onChange={handleChange}
+                  style={{ marginTop: "10px" }}
+                  required
+                />
+              )}
+            </div>
+
+            {/* Número da Sala */}
+            <div className="form-group-cadastro">
+              <label>Número da Sala</label>
+
+              <input
+                type="number"
+                name="numero"
+                value={form.numero}
+                onChange={handleChange}
+                placeholder="Ex: 101"
+                disabled={semNumero}
+                required={!semNumero}
+              />
+
+              <div className={`checkbox-card ${semNumero ? "active" : ""}`}>
+                <input
+                  type="checkbox"
+                  id="semNumero"
+                  checked={semNumero}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setSemNumero(checked);
+
+                    if (checked) {
+                      setForm({ ...form, numero: "" });
+                    }
+                  }}
+                />
+
+                <label htmlFor="semNumero" className="checkbox-content">
+                  <div className="checkbox-icon">🚫</div>
+                  <div>
+                    <strong>Sem número de sala</strong>
+                    <p>Utilizar quando não houver identificação</p>
+                  </div>
+                </label>
+            </div>
+            </div>
+
+            {/* Unidade */}
+            <div className="form-group-cadastro">
+              <label>Unidade</label>
+              <select
+                name="unidade"
+                value={form.unidade}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Selecione a Unidade</option>
+                <option value="Fatec">Fatec</option>
+                <option value="Etec">Etec</option>  
+              </select>
             </div>
 
             {/* Andar */}
