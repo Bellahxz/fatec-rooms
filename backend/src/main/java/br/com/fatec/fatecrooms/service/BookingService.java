@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -30,7 +31,21 @@ public class BookingService {
         Room room = getRoomOrThrow(roomId);
 
         List<Integer> occupied = bookingRepository.findOccupiedPeriodIds(roomId, date);
-        List<Period>  periods  = periodRepository.findByActiveOrderByStartTime((byte) 1);
+        DayOfWeek dayOfWeek = date.getDayOfWeek();
+
+        List<Period> periods = periodRepository.findByActiveOrderByStartTime((byte) 1)
+                .stream()
+                .filter(p -> {
+                    boolean saturdayPeriod = isSaturdayPeriod(p);
+                    if (dayOfWeek == DayOfWeek.SATURDAY) {
+                        return saturdayPeriod;
+                    }
+                    if (dayOfWeek == DayOfWeek.SUNDAY) {
+                        return false;
+                    }
+                    return !saturdayPeriod;
+                })
+                .toList();
 
         List<AvailabilityDTO.PeriodAvailabilityDTO> slots = periods.stream()
                 .map(p -> new AvailabilityDTO.PeriodAvailabilityDTO(
@@ -66,6 +81,20 @@ public class BookingService {
         if (period.getActive() != 1) {
             throw new IllegalStateException("Período não está ativo.");
         }
+
+        DayOfWeek bookingDay = request.getBookingDate().getDayOfWeek();
+        boolean saturdayPeriod = isSaturdayPeriod(period);
+
+        if (bookingDay == DayOfWeek.SUNDAY) {
+            throw new IllegalArgumentException("Domingo não aceita reservas.");
+        }
+        if (bookingDay == DayOfWeek.SATURDAY && !saturdayPeriod) {
+            throw new IllegalStateException("Períodos de sábado só podem ser usados em reservas de sábado.");
+        }
+        if (bookingDay != DayOfWeek.SATURDAY && saturdayPeriod) {
+            throw new IllegalStateException("Períodos de sábado não estão disponíveis em dias úteis.");
+        }
+
         if (!request.getBookingDate().isAfter(LocalDate.now())) {
             throw new IllegalArgumentException("A data da reserva deve ser futura.");
         }
@@ -226,6 +255,11 @@ public class BookingService {
     private Period getPeriodOrThrow(Integer id) {
         return periodRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Período não encontrado."));
+    }
+
+    private boolean isSaturdayPeriod(Period p) {
+        String name = p.getName() == null ? "" : p.getName().replaceAll("\\s+", "").toLowerCase();
+        return name.contains("sabado") || name.contains("sábado");
     }
 
     public BookingDTO toDTO(Booking b) {

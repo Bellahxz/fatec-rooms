@@ -2138,6 +2138,75 @@ margin:10px;
 .form-group-reserva textarea { resize: none; height: 100px; }
 .form-group-reserva select   { appearance: none; cursor: pointer; }
 
+.period-dropdown {
+  position: relative;
+}
+
+.period-dropdown-button {
+  width: 100%;
+  padding: 13px 16px;
+  border: 1.5px solid var(--gray-500);
+  border-radius: 12px;
+  background: var(--white);
+  color: var(--gray-800);
+  font-family: var(--font-body);
+  font-size: 14px;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+
+.period-dropdown-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.period-dropdown-options {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--white);
+  border: 1.5px solid var(--gray-500);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+  z-index: 10;
+}
+
+.period-checkbox {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: var(--gray-800);
+}
+
+.period-checkbox input {
+  margin: 0;
+  width: auto;
+  height: auto;
+  min-width: 18px;
+  min-height: 18px;
+}
+
+.period-dropdown-note {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--gray-600);
+}
+
+.dropdown-arrow {
+  margin-left: 8px;
+}
+
 .btn-submit-reserva {
   display: block;
   margin: 20px auto;
