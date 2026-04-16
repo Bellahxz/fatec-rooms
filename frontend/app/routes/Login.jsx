@@ -167,7 +167,7 @@ export default function Login() {
                             <p>Crie sua conta para começar a utilizar o sistema.</p>
 
                             
-                            <a href="/cadastro">Cadastrar-se</a>
+                            <a href="/cadastro" className="btn-submit-cadastro">Cadastrar-se</a>
                         </div>
 
                     </>

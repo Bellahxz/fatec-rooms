@@ -1285,7 +1285,14 @@ button.menu-card {
   transition: var(--transition);
   width: 85%;
   height: 50px;
+  text-align: center;       
+  line-height: 32px;        
 }
+
+.btn-submit-cadastro:hover { 
+  background-color: var(--red-dark); 
+}
+
 
 .btn-submit-cadastro:hover { background-color: var(--red-dark); }
 
