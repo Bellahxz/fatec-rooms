@@ -160,15 +160,31 @@ export default function CoordenadorReservas() {
               <option value="Recusada">Recusada</option>
             </select>
 
+            {/* FILTRO DE TIPO DE SALA */}
+            <div className="form-group">
+            <label>Tipo de Sala</label>
             <select
-              value={tipoFiltro}
-              onChange={(e) => setTipoFiltro(e.target.value)}
+                value={tipoFiltro}
+                onChange={(e) => setTipoFiltro(e.target.value)}
             >
-              <option value="">Todos os tipos</option>
-              <option value="Sala">Sala</option>
-              <option value="Laboratório">Laboratório</option>
-              <option value="Auditório">Auditório</option>
+                <option value="">Todos os tipos</option>
+                <option value="Sala">Sala</option>
+                <option value="Laboratório">Laboratório</option>
+                <option value="Auditório">Auditório</option>
+                <option value="Outro">Outro</option>
             </select>
+
+            {tipoFiltro === "Outro" && (
+                <input
+                type="text"
+                className="input-outro"
+                placeholder="Digite o tipo de sala..."
+                style={{ marginTop: "10px" }}
+                onChange={(e) => setTipoFiltro(e.target.value)}
+                />
+            )}
+            </div>
+
 
             <div className="filtro-datas">
               <div className="grupo-data">
