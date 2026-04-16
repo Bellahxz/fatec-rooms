@@ -52,15 +52,21 @@ export default function EditarReserva() {
           throw new Error("Falha ao carregar suas reservas.");
         }
         const data = await response.json();
-        setReservas(data.map((reserva) => ({
-          id: reserva.id,
-          data: reserva.bookingDate?.split("-").reverse().join("/") || "",
-          espaco: reserva.roomName,
-          horaInicio: reserva.periodStart?.slice(0, 5) || "",
-          horaFim: reserva.periodEnd?.slice(0, 5) || "",
-          motivo: reserva.subject || reserva.notes || "",
-          status: traduzirStatus(reserva.status),
-        })));
+        setReservas(data.map((reserva) => {
+          const periods = reserva.periods || [];
+          const first = periods[0];
+          const last = periods[periods.length - 1];
+
+          return {
+            id: reserva.id,
+            data: reserva.bookingDate?.split("-").reverse().join("/") || "",
+            espaco: reserva.roomName,
+            horaInicio: first?.periodStart?.slice(0, 5) || "--:--",
+            horaFim: last?.periodEnd?.slice(0, 5) || "--:--",
+            motivo: reserva.subject || reserva.notes || "",
+            status: traduzirStatus(reserva.status),
+          };
+        }));
       } catch (err) {
         setError(err.message || "Erro ao carregar suas reservas.");
       } finally {

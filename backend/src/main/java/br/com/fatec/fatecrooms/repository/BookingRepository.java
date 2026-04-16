@@ -11,41 +11,55 @@ import java.util.List;
 
 public interface BookingRepository extends JpaRepository<Booking, Integer> {
 
-    // Verifica conflito de reserva (mesma sala + período + data, excluindo CANCELLED e REJECTED)
+    // Verifica conflito: mesma sala + período + data, excluindo CANCELLED/REJECTED
     @Query("""
         SELECT COUNT(b) > 0 FROM Booking b
+        JOIN b.periods p
         WHERE b.room.id = :roomId
-          AND b.period.id = :periodId
+          AND p.id IN :periodIds
           AND b.bookingDate = :date
           AND b.status IN ('PENDING', 'APPROVED')
           AND (:excludeId IS NULL OR b.id <> :excludeId)
         """)
     boolean existsConflict(
             @Param("roomId") Integer roomId,
-            @Param("periodId") Integer periodId,
+            @Param("periodIds") List<Integer> periodIds,
             @Param("date") LocalDate date,
             @Param("excludeId") Integer excludeId
     );
 
     // Reservas de um usuário ordenadas por data desc
-    List<Booking> findByUserIdOrderByBookingDateDescCreatedAtDesc(Integer userId);
-
-    // Reservas por status (para coordenador)
-    List<Booking> findByStatusOrderByBookingDateAscCreatedAtAsc(Status status);
-
-    // Todas as reservas (para coordenador)
     @Query("""
-        SELECT b FROM Booking b
+        SELECT DISTINCT b FROM Booking b
+        LEFT JOIN FETCH b.periods
+        WHERE b.user.id = :userId
+        ORDER BY b.bookingDate DESC, b.createdAt DESC
+        """)
+    List<Booking> findByUserIdOrderByBookingDateDescCreatedAtDesc(@Param("userId") Integer userId);
+
+    // Reservas por status
+    @Query("""
+        SELECT DISTINCT b FROM Booking b
+        LEFT JOIN FETCH b.periods
+        WHERE b.status = :status
+        ORDER BY b.bookingDate ASC, b.createdAt ASC
+        """)
+    List<Booking> findByStatusOrderByBookingDateAscCreatedAtAsc(@Param("status") Status status);
+
+    // Todas as reservas (coordenador)
+    @Query("""
+        SELECT DISTINCT b FROM Booking b
         JOIN FETCH b.room
         JOIN FETCH b.user
-        JOIN FETCH b.period
+        LEFT JOIN FETCH b.periods
         ORDER BY b.bookingDate DESC, b.createdAt DESC
         """)
     List<Booking> findAllWithDetails();
 
-    // Disponibilidade: períodos já ocupados em uma sala/data
+    // Períodos já ocupados em sala/data
     @Query("""
-        SELECT b.period.id FROM Booking b
+        SELECT p.id FROM Booking b
+        JOIN b.periods p
         WHERE b.room.id = :roomId
           AND b.bookingDate = :date
           AND b.status IN ('PENDING', 'APPROVED')
@@ -55,27 +69,27 @@ public interface BookingRepository extends JpaRepository<Booking, Integer> {
             @Param("date") LocalDate date
     );
 
-    // Reservas por data (agenda do dia para coordenador)
+    // Agenda do dia
     @Query("""
-        SELECT b FROM Booking b
+        SELECT DISTINCT b FROM Booking b
         JOIN FETCH b.room
         JOIN FETCH b.user
-        JOIN FETCH b.period
+        LEFT JOIN FETCH b.periods
         WHERE b.bookingDate = :date
           AND b.status IN ('PENDING', 'APPROVED')
-        ORDER BY b.period.startTime
+        ORDER BY b.bookingDate
         """)
     List<Booking> findByDateWithDetails(@Param("date") LocalDate date);
 
-    // Reservas de uma sala num intervalo de datas
+    // Reservas de uma sala num intervalo
     @Query("""
-        SELECT b FROM Booking b
-        JOIN FETCH b.period
+        SELECT DISTINCT b FROM Booking b
+        LEFT JOIN FETCH b.periods
         JOIN FETCH b.user
         WHERE b.room.id = :roomId
           AND b.bookingDate BETWEEN :start AND :end
           AND b.status IN ('PENDING', 'APPROVED')
-        ORDER BY b.bookingDate, b.period.startTime
+        ORDER BY b.bookingDate
         """)
     List<Booking> findByRoomAndDateRange(
             @Param("roomId") Integer roomId,

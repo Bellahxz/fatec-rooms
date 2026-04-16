@@ -130,10 +130,9 @@ export default function Professor() {
       pendingReservations,
       uniqueRooms,
       totalRooms: rooms.length,
-      totalPeriods: periods.length,
       latestBooking,
     };
-  }, [bookings, rooms.length, periods.length]);
+  }, [bookings, rooms.length]);
 
   const calendarData = useMemo(() => {
     const month = new Date();
@@ -211,11 +210,6 @@ export default function Professor() {
                   icon: <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>,
                   number: summary.totalReservations,
                   label: "Minhas reservas",
-                },
-                {
-                  icon: <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>,
-                  number: summary.totalPeriods,
-                  label: "Horários ativos",
                 },
                 {
                   icon: <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" /></svg>,
@@ -303,10 +297,7 @@ export default function Professor() {
                   <span>Salas disponíveis</span>
                   <strong>{rooms.length}</strong>
                 </div>
-                <div>
-                  <span>Horários ativos</span>
-                  <strong>{periods.length}</strong>
-                </div>
+
                 <div>
                   <span>Reservas pendentes</span>
                   <strong>{summary.pendingReservations}</strong>

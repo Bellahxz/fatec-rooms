@@ -8,29 +8,42 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class BookingService {
 
-    private final BookingRepository    bookingRepository;
-    private final RoomRepository       roomRepository;
-    private final UserRepository       userRepository;
-    private final PeriodRepository     periodRepository;
+    private final BookingRepository bookingRepository;
+    private final RoomRepository    roomRepository;
+    private final UserRepository    userRepository;
+    private final PeriodRepository  periodRepository;
 
     // ─────────────────────────────────────────────
     //  CONSULTAS ABERTAS
     // ─────────────────────────────────────────────
 
-    /** Disponibilidade de uma sala num dia (todos os períodos ativos + flag livre/ocupado). */
     public AvailabilityDTO getAvailability(Integer roomId, LocalDate date) {
         Room room = getRoomOrThrow(roomId);
 
         List<Integer> occupied = bookingRepository.findOccupiedPeriodIds(roomId, date);
-        List<Period>  periods  = periodRepository.findByActiveOrderByStartTime((byte) 1);
+        DayOfWeek dayOfWeek = date.getDayOfWeek();
+
+        List<Period> periods = periodRepository.findByActiveOrderByStartTime((byte) 1)
+                .stream()
+                .filter(p -> {
+                    boolean saturdayPeriod = isSaturdayPeriod(p);
+                    if (dayOfWeek == DayOfWeek.SATURDAY) return saturdayPeriod;
+                    if (dayOfWeek == DayOfWeek.SUNDAY)   return false;
+                    return !saturdayPeriod;
+                })
+                .toList();
 
         List<AvailabilityDTO.PeriodAvailabilityDTO> slots = periods.stream()
                 .map(p -> new AvailabilityDTO.PeriodAvailabilityDTO(
@@ -42,7 +55,6 @@ public class BookingService {
         return new AvailabilityDTO(room.getId(), room.getName(), date, slots);
     }
 
-    /** Agenda de uma sala num intervalo de datas. */
     public List<BookingDTO> getRoomCalendar(Integer roomId, LocalDate start, LocalDate end) {
         if (start.isAfter(end)) throw new IllegalArgumentException("Data início deve ser anterior ao fim.");
         return bookingRepository.findByRoomAndDateRange(roomId, start, end)
@@ -53,30 +65,51 @@ public class BookingService {
     //  PROFESSOR
     // ─────────────────────────────────────────────
 
-    /** Cria reserva. Status inicial PENDING (aguarda coordenador). */
     @Transactional
     public BookingDTO create(String username, BookingRequest request) {
-        User   user   = getUserOrThrow(username);
-        Room   room   = getRoomOrThrow(request.getRoomId());
-        Period period = getPeriodOrThrow(request.getPeriodId());
+        User user   = getUserOrThrow(username);
+        Room room   = getRoomOrThrow(request.getRoomId());
 
         if (room.getBookable() != 1) {
             throw new IllegalStateException("Sala não está disponível para reservas.");
         }
-        if (period.getActive() != 1) {
-            throw new IllegalStateException("Período não está ativo.");
-        }
         if (!request.getBookingDate().isAfter(LocalDate.now())) {
             throw new IllegalArgumentException("A data da reserva deve ser futura.");
         }
-        if (bookingRepository.existsConflict(room.getId(), period.getId(), request.getBookingDate(), null)) {
-            throw new IllegalStateException("Já existe uma reserva para essa sala nesse horário.");
+
+        DayOfWeek bookingDay = request.getBookingDate().getDayOfWeek();
+        if (bookingDay == DayOfWeek.SUNDAY) {
+            throw new IllegalArgumentException("Domingo não aceita reservas.");
+        }
+
+        // Busca e valida todos os períodos solicitados
+        List<Period> selectedPeriods = request.getPeriodIds().stream()
+                .map(this::getPeriodOrThrow)
+                .toList();
+
+        for (Period period : selectedPeriods) {
+            if (period.getActive() != 1) {
+                throw new IllegalStateException("Período '" + period.getName() + "' não está ativo.");
+            }
+            boolean saturdayPeriod = isSaturdayPeriod(period);
+            if (bookingDay == DayOfWeek.SATURDAY && !saturdayPeriod) {
+                throw new IllegalStateException("Períodos de sábado só podem ser usados em reservas de sábado.");
+            }
+            if (bookingDay != DayOfWeek.SATURDAY && saturdayPeriod) {
+                throw new IllegalStateException("Períodos de sábado não estão disponíveis em dias úteis.");
+            }
+        }
+
+        // Verifica conflito para todos os períodos de uma vez
+        List<Integer> periodIds = selectedPeriods.stream().map(Period::getId).toList();
+        if (bookingRepository.existsConflict(room.getId(), periodIds, request.getBookingDate(), null)) {
+            throw new IllegalStateException("Um ou mais períodos já estão reservados para essa sala nessa data.");
         }
 
         Booking booking = new Booking();
         booking.setRoom(room);
         booking.setUser(user);
-        booking.setPeriod(period);
+        booking.setPeriods(new LinkedHashSet<>(selectedPeriods));
         booking.setBookingDate(request.getBookingDate());
         booking.setSubject(request.getSubject());
         booking.setNotes(request.getNotes());
@@ -85,7 +118,6 @@ public class BookingService {
         return toDTO(bookingRepository.save(booking));
     }
 
-    /** Lista reservas do próprio usuário. */
     public List<BookingDTO> listMyBookings(String username) {
         User user = getUserOrThrow(username);
         return bookingRepository
@@ -93,7 +125,6 @@ public class BookingService {
                 .stream().map(this::toDTO).toList();
     }
 
-    /** Cancela reserva (apenas pelo dono, apenas PENDING ou APPROVED). */
     @Transactional
     public BookingDTO cancel(String username, Integer bookingId) {
         Booking booking = getOrThrow(bookingId);
@@ -116,7 +147,6 @@ public class BookingService {
         return toDTO(bookingRepository.save(booking));
     }
 
-    /** Atualiza observações (apenas pelo dono, apenas PENDING ou APPROVED). */
     @Transactional
     public BookingDTO updateNotes(String username, Integer bookingId, BookingNotesRequest request) {
         Booking booking = getOrThrow(bookingId);
@@ -137,25 +167,21 @@ public class BookingService {
     //  COORDENADOR
     // ─────────────────────────────────────────────
 
-    /** Lista todas as reservas (visão coordenador). */
     public List<BookingDTO> listAll() {
         return bookingRepository.findAllWithDetails()
                 .stream().map(this::toDTO).toList();
     }
 
-    /** Lista reservas por status. */
     public List<BookingDTO> listByStatus(Status status) {
         return bookingRepository.findByStatusOrderByBookingDateAscCreatedAtAsc(status)
                 .stream().map(this::toDTO).toList();
     }
 
-    /** Agenda do dia (todas as reservas PENDING/APPROVED de uma data). */
     public List<BookingDTO> listByDate(LocalDate date) {
         return bookingRepository.findByDateWithDetails(date)
                 .stream().map(this::toDTO).toList();
     }
 
-    /** Aprova ou rejeita reserva. */
     @Transactional
     public BookingDTO review(String coordinatorUsername, Integer bookingId, BookingReviewRequest request) {
         Booking booking     = getOrThrow(bookingId);
@@ -178,7 +204,6 @@ public class BookingService {
         return toDTO(bookingRepository.save(booking));
     }
 
-    /** Coordenador pode cancelar qualquer reserva ativa. */
     @Transactional
     public BookingDTO cancelByCoordinator(String coordinatorUsername, Integer bookingId) {
         Booking booking     = getOrThrow(bookingId);
@@ -199,13 +224,12 @@ public class BookingService {
         return toDTO(bookingRepository.save(booking));
     }
 
-    /** Busca reserva por ID (qualquer usuário autenticado pode ver detalhes). */
     public BookingDTO findById(Integer id) {
         return toDTO(getOrThrow(id));
     }
 
     // ─────────────────────────────────────────────
-    //  HELPERS PRIVADOS
+    //  HELPERS
     // ─────────────────────────────────────────────
 
     private Booking getOrThrow(Integer id) {
@@ -225,10 +249,22 @@ public class BookingService {
 
     private Period getPeriodOrThrow(Integer id) {
         return periodRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Período não encontrado."));
+                .orElseThrow(() -> new IllegalArgumentException("Período não encontrado: " + id));
+    }
+
+    private boolean isSaturdayPeriod(Period p) {
+        String name = p.getName() == null ? "" : p.getName().replaceAll("\\s+", "").toLowerCase();
+        return name.contains("sabado") || name.contains("sábado");
     }
 
     public BookingDTO toDTO(Booking b) {
+        List<BookingDTO.PeriodSummary> periodSummaries = b.getPeriods().stream()
+                .sorted((a, c) -> a.getStartTime().compareTo(c.getStartTime()))
+                .map(p -> new BookingDTO.PeriodSummary(
+                        p.getId(), p.getName(), p.getStartTime(), p.getEndTime()
+                ))
+                .toList();
+
         return new BookingDTO(
                 b.getId(),
                 b.getRoom().getId(),
@@ -239,10 +275,7 @@ public class BookingService {
                 b.getUser().getDisplayname() != null
                         ? b.getUser().getDisplayname()
                         : b.getUser().getFirstname() + " " + b.getUser().getLastname(),
-                b.getPeriod().getId(),
-                b.getPeriod().getName(),
-                b.getPeriod().getStartTime(),
-                b.getPeriod().getEndTime(),
+                periodSummaries,
                 b.getBookingDate(),
                 b.getSubject(),
                 b.getNotes(),
