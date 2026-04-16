@@ -6,6 +6,8 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -30,9 +32,14 @@ public class Booking {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "period_id", nullable = false)
-    private Period period;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "booking_periods",
+            joinColumns = @JoinColumn(name = "booking_id"),
+            inverseJoinColumns = @JoinColumn(name = "period_id")
+    )
+    @OrderBy("startTime ASC")
+    private Set<Period> periods = new LinkedHashSet<>();
 
     @Column(name = "booking_date", nullable = false)
     private LocalDate bookingDate;

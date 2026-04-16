@@ -34,86 +34,47 @@ export default function SolicitaReserva() {
 
     useEffect(() => {
         const token = localStorage.getItem("token");
-        if (!token) {
-            navigate("/login");
-            return;
-        }
+        if (!token) { navigate("/login"); return; }
 
         async function loadPageData() {
             try {
                 setLoadingPage(true);
                 setError(null);
 
-                const [roomsResponse, bookingsResponse] = await Promise.all([
-                    fetch("/api/rooms", {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            "Content-Type": "application/json",
-                        },
-                    }),
-                    fetch("/api/bookings/my", {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            "Content-Type": "application/json",
-                        },
-                    }),
+                const [roomsRes, bookingsRes] = await Promise.all([
+                    fetch("/api/rooms", { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }),
+                    fetch("/api/bookings/my", { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }),
                 ]);
 
-                if (!roomsResponse.ok) {
-                    throw new Error("Falha ao carregar salas.");
-                }
-                if (!bookingsResponse.ok) {
-                    throw new Error("Falha ao carregar suas reservas.");
-                }
+                if (!roomsRes.ok) throw new Error("Falha ao carregar salas.");
+                if (!bookingsRes.ok) throw new Error("Falha ao carregar suas reservas.");
 
-                const roomsData = await roomsResponse.json();
-                const bookingsData = await bookingsResponse.json();
-
-                setSalas(roomsData || []);
-                setMyBookings(bookingsData || []);
+                setSalas(await roomsRes.json() || []);
+                setMyBookings(await bookingsRes.json() || []);
             } catch (err) {
                 setError(err.message || "Erro ao carregar a página.");
             } finally {
                 setLoadingPage(false);
             }
         }
-
         loadPageData();
     }, [navigate]);
 
     useEffect(() => {
-        if (selectedRoom && form.dataISO) {
-            fetchAvailability(selectedRoom.id, form.dataISO);
-        }
+        if (selectedRoom && form.dataISO) fetchAvailability(selectedRoom.id, form.dataISO);
     }, [selectedRoom, form.dataISO]);
 
     async function fetchAvailability(roomId, dataISO) {
-        if (!roomId || !dataISO) {
-            setAvailability(null);
-            return;
-        }
-
+        if (!roomId || !dataISO) { setAvailability(null); return; }
         const token = localStorage.getItem("token");
         setLoadingAvailability(true);
         setError(null);
-
         try {
-            const response = await fetch(
-                `/api/bookings/availability?roomId=${roomId}&date=${dataISO}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error("Não foi possível carregar a disponibilidade.");
-            }
-
-            const data = await response.json();
-            setAvailability(data);
+            const res = await fetch(`/api/bookings/availability?roomId=${roomId}&date=${dataISO}`, {
+                headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            });
+            if (!res.ok) throw new Error("Não foi possível carregar a disponibilidade.");
+            setAvailability(await res.json());
         } catch (err) {
             setError(err.message || "Erro ao buscar disponibilidade.");
             setAvailability(null);
@@ -124,49 +85,28 @@ export default function SolicitaReserva() {
 
     function handleChange(e) {
         const { name, value, type, checked } = e.target;
-
-        setForm((prev) => {
-            const next = {
-                ...prev,
-                [name]: type === "checkbox" ? checked : value,
-            };
-
-            if (name === "naoSeAplica" && checked) {
-                next.curso = "";
-            }
-
+        setForm(prev => {
+            const next = { ...prev, [name]: type === "checkbox" ? checked : value };
+            if (name === "naoSeAplica" && checked) next.curso = "";
             return next;
         });
     }
 
     function handlePeriodToggle(periodId) {
-        setSelectedPeriodIds((prev) =>
-            prev.includes(periodId)
-                ? prev.filter((id) => id !== periodId)
-                : [...prev, periodId]
+        setSelectedPeriodIds(prev =>
+            prev.includes(periodId) ? prev.filter(id => id !== periodId) : [...prev, periodId]
         );
     }
 
     const roomStatusMap = myBookings.reduce((acc, booking) => {
-        if (booking.bookingDate) {
-            acc[booking.bookingDate] = booking.status;
-        }
+        if (booking.bookingDate) acc[booking.bookingDate] = booking.status;
         return acc;
     }, {});
 
     function handleRoomSelect(room) {
-        const dataISO = form.dataISO;
-        if (!dataISO) {
-            setError("Selecione uma data antes de escolher uma sala.");
-            return;
-        }
-
+        if (!form.dataISO) { setError("Selecione uma data antes de escolher uma sala."); return; }
         setSelectedRoom(room);
-        setForm((prev) => ({
-            ...prev,
-            espaco: room.name,
-            roomId: room.id,
-        }));
+        setForm(prev => ({ ...prev, espaco: room.name, roomId: room.id }));
         setSelectedPeriodIds([]);
         setPeriodDropdownOpen(false);
         setModalOpen(false);
@@ -178,81 +118,55 @@ export default function SolicitaReserva() {
         setSuccess(null);
 
         if (!form.roomId || selectedPeriodIds.length === 0 || !form.dataISO || !form.motivo) {
-            setError("Preencha a data, sala, um ou mais períodos e o motivo para solicitar a reserva.");
+            setError("Preencha a data, sala, ao menos um período e o motivo.");
             return;
         }
 
         const token = localStorage.getItem("token");
-        if (!token) {
-            navigate("/login");
-            return;
-        }
+        if (!token) { navigate("/login"); return; }
 
-        const notes = form.naoSeAplica
-            ? "Não se aplica"
-            : `Curso: ${form.curso || "-"}`;
+        const notes = form.naoSeAplica ? "Não se aplica" : `Curso: ${form.curso || "-"}`;
 
-        const results = [];
-        const failures = [];
+        // ── Envia UMA única reserva com todos os períodos ──
+        const body = {
+            roomId: form.roomId,
+            periodIds: selectedPeriodIds.map(Number),
+            bookingDate: form.dataISO,
+            subject: form.motivo,
+            notes,
+        };
 
         try {
             setLoadingSubmit(true);
+            const res = await fetch("/api/bookings", {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+                body: JSON.stringify(body),
+            });
 
-            for (const periodId of selectedPeriodIds) {
-                const body = {
-                    roomId: form.roomId,
-                    periodId: Number(periodId),
-                    bookingDate: form.dataISO,
-                    subject: form.motivo,
-                    notes,
-                };
-
-                const response = await fetch("/api/bookings", {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(body),
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    failures.push({ date: form.dataISO, message: errorText || "Falha ao solicitar a reserva." });
-                    continue;
-                }
-
-                const booking = await response.json();
-                results.push(booking);
+            if (!res.ok) {
+                const errorText = await res.text();
+                throw new Error(errorText || "Falha ao solicitar a reserva.");
             }
 
-            if (results.length > 0) {
-                const message = results.length === 1
+            const totalPeriods = selectedPeriodIds.length;
+            setSuccess(
+                totalPeriods === 1
                     ? "Reserva solicitada com sucesso. Aguarde aprovação."
-                    : `${results.length} reservas solicitadas com sucesso. Aguarde aprovação.`;
-                setSuccess(message);
-                setSelectedRoom(null);
-                setAvailability(null);
-                setSelectedPeriodIds([]);
-                setPeriodDropdownOpen(false);
-                setForm((prev) => ({
-                    ...prev,
-                    espaco: "",
-                    roomId: null,
-                    motivo: "",
-                    curso: "",
-                    naoSeAplica: false,
-                }));
-            }
+                    : `Reserva com ${totalPeriods} períodos solicitada com sucesso. Aguarde aprovação.`
+            );
 
-            if (failures.length > 0) {
-                const failureMessages = failures
-                    .map((failure) => `${failure.date}: ${failure.message}`)
-                    .join("; ");
-                setError(`Algumas reservas falharam: ${failureMessages}`);
-            }
+            setSelectedRoom(null);
+            setAvailability(null);
+            setSelectedPeriodIds([]);
+            setPeriodDropdownOpen(false);
+            setForm(prev => ({ ...prev, espaco: "", roomId: null, motivo: "", curso: "", naoSeAplica: false }));
 
-            await loadMyBookings(token);
+            // Atualiza lista de reservas
+            const updatedRes = await fetch("/api/bookings/my", {
+                headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            });
+            if (updatedRes.ok) setMyBookings(await updatedRes.json() || []);
         } catch (err) {
             setError(err.message || "Erro ao enviar a solicitação.");
         } finally {
@@ -260,44 +174,14 @@ export default function SolicitaReserva() {
         }
     }
 
-    async function loadMyBookings(token) {
-        try {
-            const response = await fetch("/api/bookings/my", {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "application/json",
-                },
-            });
-
-            if (!response.ok) {
-                throw new Error("Falha ao carregar suas reservas.");
-            }
-
-            const data = await response.json();
-            setMyBookings(data || []);
-        } catch (err) {
-            setError(err.message || "Erro ao atualizar reservas.");
-        }
-    }
-
-    const availablePeriods = availability?.periods?.filter((period) => period.available) || [];
-    const selectedPeriodLabel = selectedPeriodIds.length === 0
-        ? "Selecione os períodos"
-        : `${selectedPeriodIds.length} período${selectedPeriodIds.length > 1 ? "s" : ""} selecionado${selectedPeriodIds.length > 1 ? "s" : ""}`;
+    const availablePeriods = availability?.periods?.filter(p => p.available) || [];
 
     if (loadingPage) {
         return (
             <>
                 <Navbar activePage="SolicitaReserva" />
-                <PageHero
-                    variant="SolicitaReserva"
-                    tag="Painel Operacional"
-                    title="Solicitação de Reserva"
-                    description="Carregando dados de salas e reservas..."
-                />
-                <div className="content-solicitarReserva">
-                    <div className="form-title">Carregando informações...</div>
-                </div>
+                <PageHero variant="SolicitaReserva" tag="Painel Operacional" title="Solicitação de Reserva" description="Carregando..." />
+                <div className="content-solicitarReserva"><div className="form-title">Carregando informações...</div></div>
                 <Footer />
             </>
         );
@@ -315,6 +199,7 @@ export default function SolicitaReserva() {
             />
 
             <div className="content-solicitarReserva">
+                {/* ── Calendário ── */}
                 <div className="div-calendario">
                     <div className="title-calendario">
                         <h3>Minhas Reservas:</h3>
@@ -322,18 +207,13 @@ export default function SolicitaReserva() {
                     </div>
 
                     <Calendar
-                        onChange={(value) => {
+                        onChange={value => {
                             setDate(value);
-                            const year = value.getFullYear();
-                            const month = String(value.getMonth() + 1).padStart(2, "0");
-                            const day = String(value.getDate()).padStart(2, "0");
-                            const dataISO = `${year}-${month}-${day}`;
-
-                            setForm((prev) => ({
-                                ...prev,
-                                data: value.toLocaleDateString("pt-BR"),
-                                dataISO,
-                            }));
+                            const y = value.getFullYear();
+                            const m = String(value.getMonth() + 1).padStart(2, "0");
+                            const d = String(value.getDate()).padStart(2, "0");
+                            const dataISO = `${y}-${m}-${d}`;
+                            setForm(prev => ({ ...prev, data: value.toLocaleDateString("pt-BR"), dataISO }));
                             setSelectedRoom(null);
                             setAvailability(null);
                             setSelectedPeriodIds([]);
@@ -341,23 +221,21 @@ export default function SolicitaReserva() {
                             setModalOpen(true);
                         }}
                         value={date}
-                        tileClassName={({ date }) => {
-                            const year = date.getFullYear();
-                            const month = String(date.getMonth() + 1).padStart(2, "0");
-                            const day = String(date.getDate()).padStart(2, "0");
-                            const dataISO = `${year}-${month}-${day}`;
-
-                            if (dataISO === form.dataISO) return "dia-selecionado";
-
-                            const status = roomStatusMap[dataISO];
-                            if (status === "APPROVED") return "dia-aceita";
-                            if (status === "PENDING") return "dia-pendente";
-                            if (status === "CANCELLED") return "dia-cancelada";
+                        tileClassName={({ date: d }) => {
+                            const y = d.getFullYear();
+                            const m = String(d.getMonth() + 1).padStart(2, "0");
+                            const dd = String(d.getDate()).padStart(2, "0");
+                            const iso = `${y}-${m}-${dd}`;
+                            if (iso === form.dataISO) return "dia-selecionado";
+                            const st = roomStatusMap[iso];
+                            if (st === "APPROVED") return "dia-aceita";
+                            if (st === "PENDING")  return "dia-pendente";
+                            if (st === "CANCELLED") return "dia-cancelada";
                             return null;
                         }}
                         locale="pt-BR"
-                        formatShortWeekday={(locale, date) =>
-                            date.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "")
+                        formatShortWeekday={(locale, d) =>
+                            d.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "")
                         }
                     />
 
@@ -371,79 +249,61 @@ export default function SolicitaReserva() {
                     <div className="reservas-feitas">
                         <h4>Horários Reservados:</h4>
                         <div className="lista-horarios">
-                            {myBookings.map((booking) => (
-                                <p key={booking.id}>
-                                    <span className="hora">
-                                        {booking.bookingDate} • {booking.periodStart?.slice(0, 5) || "--:--"} - {booking.periodEnd?.slice(0, 5) || "--:--"}
-                                    </span>
-                                    <span className="prof">{booking.roomName}</span>
-                                </p>
-                            ))}
                             {myBookings.length === 0 && <p>Nenhuma reserva encontrada.</p>}
+                            {myBookings.map(booking => {
+                                const periods = booking.periods || [];
+                                const first = periods[0];
+                                const last  = periods[periods.length - 1];
+                                const horaInicio = first?.periodStart?.slice(0, 5) || "--:--";
+                                const horaFim    = last?.periodEnd?.slice(0, 5) || "--:--";
+                                return (
+                                    <p key={booking.id}>
+                                        <span className="hora">
+                                            {booking.bookingDate} • {horaInicio} - {horaFim}
+                                            {periods.length > 1 && ` (${periods.length} períodos)`}
+                                        </span>
+                                        <span className="prof">{booking.roomName}</span>
+                                    </p>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
 
+                {/* ── Modal de salas ── */}
                 {modalOpen && (
                     <div className="modal-overlay" onClick={() => setModalOpen(false)}>
-                        <div className="modal-espacos" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-espacos" onClick={e => e.stopPropagation()}>
                             <div className="modal-topo">
                                 <h2>Espaços disponíveis</h2>
-                                <button
-                                    className="btn-close-modal"
-                                    onClick={() => setModalOpen(false)}
-                                >
-                                    ×
-                                </button>
+                                <button className="btn-close-modal" onClick={() => setModalOpen(false)}>×</button>
                             </div>
-
                             <div className="lista-salas">
-                                {salas.filter((sala) => sala.bookable === 1).map((sala) => (
-                                    <button
-                                        key={sala.id}
-                                        className="btn-sala"
-                                        type="button"
-                                        onClick={() => handleRoomSelect(sala)}
-                                    >
+                                {salas.filter(s => s.bookable === 1).map(sala => (
+                                    <button key={sala.id} className="btn-sala" type="button" onClick={() => handleRoomSelect(sala)}>
                                         <span className="sala-nome">{sala.name}</span>
                                         <span className="sala-andar">{sala.location || sala.notes || "Local não informado"}</span>
                                     </button>
                                 ))}
-
-                                {salas.filter((sala) => sala.bookable === 1).length === 0 && (
-                                    <div className="sem-salas">
-                                        Nenhuma sala ativa encontrada.
-                                    </div>
+                                {salas.filter(s => s.bookable === 1).length === 0 && (
+                                    <div className="sem-salas">Nenhuma sala ativa encontrada.</div>
                                 )}
                             </div>
                         </div>
                     </div>
                 )}
 
+                {/* ── Formulário ── */}
                 <div className="div-forms-reserva">
                     <form onSubmit={handleSubmit}>
-                        {error && <div className="form-title" style={{ color: "#b91c1c" }}>{error}</div>}
+                        {error   && <div className="form-title" style={{ color: "#b91c1c" }}>{error}</div>}
                         {success && <div className="form-title" style={{ color: "#166534" }}>{success}</div>}
 
                         <div className="form-group-reserva">
                             <label>Data e espaço selecionado:</label>
                             <div className="horario">
-                                <input
-                                    type="text"
-                                    name="data"
-                                    placeholder="DD/MM/AAAA"
-                                    value={form.data}
-                                    readOnly
-                                    style={{ backgroundColor: "#cfcccc89" }}
-                                />
-                                <input
-                                    type="text"
-                                    name="espaco"
-                                    placeholder="Selecione uma sala"
-                                    value={form.espaco}
-                                    readOnly
-                                    style={{ backgroundColor: "#cfcccc89" }}
-                                />
+                                <input type="text" name="data" placeholder="DD/MM/AAAA" value={form.data} readOnly style={{ backgroundColor: "#cfcccc89" }} />
+                                <input type="text" name="espaco" placeholder="Selecione uma sala" value={form.espaco} readOnly style={{ backgroundColor: "#cfcccc89" }} />
                             </div>
                         </div>
 
@@ -453,35 +313,69 @@ export default function SolicitaReserva() {
                                 <button
                                     type="button"
                                     className="period-dropdown-button"
-                                    onClick={() => setPeriodDropdownOpen((prev) => !prev)}
+                                    onClick={() => setPeriodDropdownOpen(prev => !prev)}
                                     disabled={!selectedRoom || loadingAvailability || availablePeriods.length === 0}
                                 >
                                     {selectedPeriodIds.length === 0
-                                        ? "Selecione os períodos"
+                                        ? (loadingAvailability ? "Carregando períodos..." : "Selecione os períodos")
                                         : `${selectedPeriodIds.length} período${selectedPeriodIds.length > 1 ? "s" : ""} selecionado${selectedPeriodIds.length > 1 ? "s" : ""}`}
                                     <span className="dropdown-arrow">▾</span>
                                 </button>
+
                                 {periodDropdownOpen && (
                                     <div className="period-dropdown-options">
                                         {availablePeriods.length === 0 ? (
-                                            <small>{selectedRoom ? "Nenhum período disponível para essa sala nesta data." : "Selecione uma sala para ver os períodos disponíveis."}</small>
+                                            <small>
+                                                {selectedRoom
+                                                    ? "Nenhum período disponível para essa sala nesta data."
+                                                    : "Selecione uma sala para ver os períodos disponíveis."}
+                                            </small>
                                         ) : (
-                                            availablePeriods.map((period) => (
-                                                <label key={period.periodId} className="period-checkbox">
-                                                    <input
-                                                        type="checkbox"
-                                                        name="periodIds"
-                                                        value={period.periodId}
-                                                        checked={selectedPeriodIds.includes(period.periodId)}
-                                                        onChange={() => handlePeriodToggle(period.periodId)}
-                                                    />
-                                                    {period.periodName} — {period.startTime?.slice(0, 5)} às {period.endTime?.slice(0, 5)}
-                                                </label>
-                                            ))
+                                            <>
+                                                <div style={{ marginBottom: 8, display: "flex", gap: 8 }}>
+                                                    <button
+                                                        type="button"
+                                                        style={{ fontSize: 12, padding: "2px 8px", borderRadius: 6, border: "1px solid #ccc", cursor: "pointer", background: "white" }}
+                                                        onClick={() => setSelectedPeriodIds(availablePeriods.map(p => p.periodId))}
+                                                    >
+                                                        Selecionar todos
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        style={{ fontSize: 12, padding: "2px 8px", borderRadius: 6, border: "1px solid #ccc", cursor: "pointer", background: "white" }}
+                                                        onClick={() => setSelectedPeriodIds([])}
+                                                    >
+                                                        Limpar
+                                                    </button>
+                                                </div>
+                                                {availablePeriods.map(period => (
+                                                    <label key={period.periodId} className="period-checkbox">
+                                                        <input
+                                                            type="checkbox"
+                                                            value={period.periodId}
+                                                            checked={selectedPeriodIds.includes(period.periodId)}
+                                                            onChange={() => handlePeriodToggle(period.periodId)}
+                                                        />
+                                                        {period.periodName} — {period.startTime?.slice(0, 5)} às {period.endTime?.slice(0, 5)}
+                                                    </label>
+                                                ))}
+                                            </>
                                         )}
                                     </div>
                                 )}
                             </div>
+
+                            {/* Resumo dos períodos selecionados */}
+                            {selectedPeriodIds.length > 0 && (
+                                <div style={{ marginTop: 8, fontSize: 13, color: "#374151" }}>
+                                    <strong>Selecionados:</strong>{" "}
+                                    {availablePeriods
+                                        .filter(p => selectedPeriodIds.includes(p.periodId))
+                                        .sort((a, b) => a.startTime?.localeCompare(b.startTime))
+                                        .map(p => `${p.startTime?.slice(0, 5)}–${p.endTime?.slice(0, 5)}`)
+                                        .join(", ")}
+                                </div>
+                            )}
                         </div>
 
                         <div className="form-group-reserva">
@@ -515,7 +409,6 @@ export default function SolicitaReserva() {
                             </select>
                         </div>
 
-
                         <div className="form-group-reserva-check">
                             <p>Caso a reserva não se aplique a um curso, selecione a opção "Não se aplica"</p>
                             <input
@@ -532,6 +425,7 @@ export default function SolicitaReserva() {
                     </form>
                 </div>
             </div>
+
             <Footer />
         </>
     );

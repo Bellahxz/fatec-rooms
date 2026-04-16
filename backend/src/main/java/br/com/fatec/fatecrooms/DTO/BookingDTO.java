@@ -7,6 +7,7 @@ import lombok.Getter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 
 @Getter
 @AllArgsConstructor
@@ -24,11 +25,8 @@ public class BookingDTO {
     private String username;
     private String userDisplayName;
 
-    // Período
-    private Integer periodId;
-    private String periodName;
-    private LocalTime periodStart;
-    private LocalTime periodEnd;
+    // Períodos (lista ordenada por horário)
+    private List<PeriodSummary> periods;
 
     // Reserva
     private LocalDate bookingDate;
@@ -43,4 +41,14 @@ public class BookingDTO {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    // DTO interno para cada período
+    @Getter
+    @AllArgsConstructor
+    public static class PeriodSummary {
+        private Integer periodId;
+        private String periodName;
+        private LocalTime periodStart;
+        private LocalTime periodEnd;
+    }
 }
