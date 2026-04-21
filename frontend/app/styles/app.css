@@ -3073,3 +3073,182 @@ SOLICITAÇÕES DE RESERVA
   stroke-width: 2;
 }
 
+/* ══════════════════════════════════════════
+   PÁGINA DE RELATÓRIOS
+══════════════════════════════════════════ */
+.layout-relatorios {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 28px 24px 44px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* Filtros */
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  background: var(--gray-100);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  border: 1.5px solid var(--gray-200);
+}
+
+.filtros input,
+.filtros select {
+  padding: 10px 14px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 14px;
+  background: var(--white);
+  color: var(--gray-800);
+  transition: border-color var(--transition);
+}
+
+.filtros input:focus,
+.filtros select:focus {
+  border-color: var(--red);
+  background: var(--gray-50);
+}
+
+/* Botões */
+.filtros button {
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  border: none;
+  font-family: var(--font-main);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition), transform 0.15s;
+}
+
+/* Botão vermelho (Limpar filtros) */
+.filtros .btn-red {
+  background: var(--red);
+  color: var(--white);
+}
+
+.filtros .btn-red:hover {
+  background: var(--red-dark);
+  transform: translateY(-1px);
+}
+
+.filtros .btn-red:active {
+  background: #2196F3; /* azul quando clicado */
+}
+
+/* Botão azul (Exportar CSV) */
+.filtros .btn-blue {
+  background: #2196F3;
+  color: var(--white);
+}
+
+.filtros .btn-blue:hover {
+  background: #1976D2;
+  transform: translateY(-1px);
+}
+
+.filtros .btn-blue:active {
+  background: var(--red); /* vermelho quando clicado */
+}
+
+/* Gráficos */
+.grafico-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  border: 1.5px solid var(--gray-200);
+  padding: 22px;
+  box-shadow: var(--shadow-red);
+  animation: fadeUp 0.4s ease both;
+}
+
+.grafico-card h2 {
+  font-family: var(--font-main);
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 18px;
+  color: var(--gray-800);
+}
+
+/* Container dos gráficos */
+.graficos-grid {
+  display: grid;
+  gap: 24px;
+}
+
+@media (min-width: 1024px) {
+  .graficos-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Gráfico largo */
+.grafico-card.grafico-largo {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* Tooltip customizado */
+.recharts-tooltip-wrapper {
+  background: var(--gray-800);
+  color: var(--white);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+}
+
+/* Legenda */
+.recharts-legend-item {
+  font-size: 13px;
+  font-family: var(--font-body);
+  color: var(--gray-500);
+}
+
+/* Estatísticas rápidas */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  padding: 0 20px;
+}
+
+.stat-card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 18px 16px;
+  border: 1.5px solid var(--gray-200);
+  text-align: center;
+  animation: fadeUp 0.5s ease both;
+}
+
+.stat-card.highlight {
+  background: var(--red);
+  border-color: var(--red);
+}
+
+.stat-card.highlight .stat-number,
+.stat-card.highlight .stat-label {
+  color: white;
+}
+
+.stat-number {
+  font-family: var(--font-main);
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--gray-800);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: var(--gray-500);
+  font-weight: 500;
+}
+
+
