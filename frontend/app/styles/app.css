@@ -1955,10 +1955,10 @@ SOLICITAÇÕES DE RESERVA
 
 .hora {
   font-weight: 600;
-  color: ;
+  color: var(--gray-800);
 }
 
-.prof {F
+.prof {
   font-size: 13px;
   color: var(--gray-600);
 }
@@ -2731,6 +2731,10 @@ SOLICITAÇÕES DE RESERVA
   font-family: var(--font-main);
 }
 
+.info-reserva.completa {
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 2fr 1fr;
+}
+
 .item-reserva {
   display: flex;
   flex-direction: column;
@@ -2749,6 +2753,22 @@ SOLICITAÇÕES DE RESERVA
   color: #555;
   font-size: 14px;
   font-family: var(--font-main);
+}
+
+.valor.aceita {
+  color: #4CAF50;
+  font-weight: 600;
+}
+
+.valor.pendente {
+  color: #FFC107;
+  font-weight: 600;
+}
+
+.valor.cancelada,
+.valor.recusada {
+  color: #F44336;
+  font-weight: 600;
 }
 
 .item-reserva input {
@@ -2811,6 +2831,97 @@ SOLICITAÇÕES DE RESERVA
 
 .btn-salvar:hover {
   background: #388E3C;
+}
+
+/* Ações para aprovar/rejeitar */
+.acoes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 120px;
+  margin-top: 15px;
+}
+
+.acoes button {
+  width: 100%;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: 0.2s;
+  font-family: var(--font-main);
+}
+
+.btn-aprovar {
+  background: #4CAF50;
+  color: white;
+}
+
+.btn-aprovar:hover {
+  background: #45A049;
+}
+
+.btn-rejeitar {
+  background: #F44336;
+  color: white;
+}
+
+.btn-rejeitar:hover {
+  background: #D32F2F;
+}
+
+/* Modal de rejeição */
+.modal-rejeicao {
+  margin-top: 15px;
+  padding: 15px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.input-nota {
+  width: 100%;
+  min-height: 80px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-family: var(--font-main);
+  resize: vertical;
+}
+
+.botoes-modal {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.btn-confirmar {
+  background: #F44336;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--font-main);
+}
+
+.btn-confirmar:hover {
+  background: #D32F2F;
+}
+
+.btn-cancelar {
+  background: #9E9E9E;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: var(--font-main);
+}
+
+.btn-cancelar:hover {
+  background: #757575;
 }
 
 /* ══════════════════════════════════════════
@@ -2993,9 +3104,10 @@ SOLICITAÇÕES DE RESERVA
   border-radius: var(--radius-lg);
   border: 1.5px solid var(--gray-200);
   padding: 20px;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 14px;
+  align-items: start;
 }
 
 .filtros input,
@@ -3018,24 +3130,75 @@ SOLICITAÇÕES DE RESERVA
   background: white;
 }
 
+.filtro-data-wrapper,
 .filtro-datas {
-  display: flex;
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
-  flex-wrap: wrap;
+}
+
+/* Responsividade dos filtros */
+@media (max-width: 1024px) {
+  .filtros {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .filtros {
+    grid-template-columns: 1fr;
+  }
+
+  .filtro-data-wrapper,
+  .filtro-datas {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .filtros {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .filtro-data-wrapper,
+  .filtro-datas {
+    grid-template-columns: 1fr;
+  }
 }
 
 .grupo-data {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .grupo-data label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--gray-500);
   font-family: var(--font-main);
+}
+
+.grupo-data input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 12px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  background: var(--gray-100);
+  color: var(--gray-800);
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.grupo-data input:focus {
+  border-color: var(--red);
+  background: white;
 }
 
 /* Lista de reservas */
@@ -3471,3 +3634,144 @@ HISTORICO
 
 
 
+
+/* ------------------------------------------
+   TODAS AS RESERVAS
+------------------------------------------ */
+
+.layout-reservas-completas {
+  display: flex;
+  gap: 30px;
+  max-width: 1200px;
+  margin: 40px auto;
+  align-items: flex-start;
+  font-family: var(--font-main);
+}
+
+.conteudo-principal {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-main);
+}
+
+.filtros-reservas {
+  width: 100%;
+  margin-bottom: 20px;
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+  font-family: var(--font-main);
+}
+
+.filtros-reservas .input-busca,
+.filtros-reservas .select-status,
+.filtros-reservas .input-data {
+  padding: 10px;
+  border-radius: 20px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  font-family: var(--font-main);
+}
+
+.filtros-reservas .input-busca {
+  flex: 1;
+  font-family: var(--font-main);
+}
+
+.container-lista-reservas {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: var(--font-main);
+}
+
+.card-reserva-completa {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px 25px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  transition: 0.3s;
+  border-left: 6px solid #e0e0e0;
+  font-family: var(--font-main);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.card-reserva-completa:hover {
+  transform: translateY(-3px);
+  font-family: var(--font-main);
+}
+
+.card-reserva-completa.aceita {
+  border-left: 6px solid #4CAF50;
+  font-family: var(--font-main);
+}
+
+.card-reserva-completa.pendente {
+  border-left: 6px solid #FFC107;
+  font-family: var(--font-main);
+}
+
+.card-reserva-completa.cancelada {
+  border-left: 6px solid #F44336;
+  opacity: 0.7;
+  font-family: var(--font-main);
+}
+
+.card-reserva-completa.recusada {
+  border-left: 6px solid #F44336;
+  opacity: 0.7;
+  font-family: var(--font-main);
+}
+
+.informacoes-reserva {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 2fr 1fr;
+  gap: 20px;
+  width: 100%;
+  font-family: var(--font-main);
+}
+
+.item-informacao {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-main);
+}
+
+.rotulo-informacao {
+  font-weight: 600;
+  color: #222;
+  font-size: 13px;
+  margin-bottom: 4px;
+  font-family: var(--font-main);
+}
+
+.valor-informacao {
+  color: #555;
+  font-size: 14px;
+  font-family: var(--font-main);
+}
+
+.valor-status.aceita {
+  color: #4CAF50;
+  font-weight: 600;
+}
+
+.valor-status.pendente {
+  color: #FFC107;
+  font-weight: 600;
+}
+
+.valor-status.cancelada {
+  color: #F44336;
+  font-weight: 600;
+}
+
+.valor-status.recusada {
+  color: #F44336;
+  font-weight: 600;
+}

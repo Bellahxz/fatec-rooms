@@ -16,9 +16,8 @@ export default [
   route("solicitar-reserva", "routes/SolicitaReserva.jsx"),
   route("minhas-reservas", "routes/MinhasReservas.jsx"),
   route("cadastro-salas", "routes/CadastroSalas.jsx"),
-  route("coordenador-solicitacoes", "routes/CoordenadorSolicitacoes.jsx"),
   route("perfil", "routes/Perfil.jsx"),
   route("relatorio-reservas", "routes/RelatorioReservas.jsx"),
-  route("historico", "routes/Historico.jsx"),
-
+  route("todas-reservas", "routes/TodasReservas.jsx"),
+  
 ];
