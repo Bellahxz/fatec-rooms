@@ -3775,3 +3775,188 @@ HISTORICO
   color: #F44336;
   font-weight: 600;
 }
+
+
+/* ══════════════════════════════════════════
+   PÁGINA DE CONFIGURAÇÃO
+══════════════════════════════════════════ */
+/* CONTAINER */
+.content-config {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 30px 40px;
+}
+
+/* TÍTULO DA SEÇÃO */
+.secao-titulo {
+  margin-bottom: 20px;
+  border-left: 4px solid var(--red);
+  padding-left: 10px;
+  font-size:20px;
+}
+
+/* CARD */
+.card {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.08);
+  margin-bottom:30px;
+}
+
+/* LADO ESQUERDO */
+.card-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  
+}
+
+
+.icon-box {
+  background: var(--gray-50);
+  color: var(--red);
+  padding: 12px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.card-info h3 {
+  font-size:16px;
+  margin: 0 0 5px;
+}
+
+.card-info p {
+  margin: 0;
+  color: #666;
+  max-width: 400px;
+  font-size:13px;
+  padding-right:30px;
+
+}
+
+/* LADO DIREITO */
+.card-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* BADGE */
+.badge {
+  background: var(--white);
+  padding: 8px 40px;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+/* INPUT */
+.input-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding:5px;
+}
+
+.input-group input {
+  width: 60px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid var(--gray-200);
+}
+
+/* BOTÕES */
+button {
+  border: none;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.btn-editar {
+  background: transparent;
+  border: 1px solid var(--red);
+  color: var(--red);
+}
+
+.btn-editar:hover {
+  background: var(--gray-100);
+}
+
+.btn-cancelar {
+  height:33px;
+  margin-top:10px;
+  background: var(--gray-500);
+}
+
+.btn-salvar {
+  background: #2e7d32;
+  color: white;
+}
+
+.botoes {
+  display: flex;
+  gap: 15px;
+  padding:5px;
+}
+
+/* GRID */
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+/* ITEM */
+.config-item {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: 0.2s;
+  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.config-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0px 6px 14px rgba(0, 0, 0, 0.1);
+}
+
+/* LADO ESQUERDO */
+.config-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.config-left h4 {
+  margin: 0;
+}
+
+.config-left p {
+  margin: 2px 0 0;
+  font-size: 14px;
+  color: #666;
+  max-width: 250px;
+}
+
+/* REUTILIZA O ICON-BOX */
+.icon-box {
+  background: #fdecec;
+  color: #c40000;
+  padding: 10px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

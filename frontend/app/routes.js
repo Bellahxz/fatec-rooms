@@ -19,5 +19,5 @@ export default [
   route("perfil", "routes/Perfil.jsx"),
   route("relatorio-reservas", "routes/RelatorioReservas.jsx"),
   route("todas-reservas", "routes/TodasReservas.jsx"),
-  
+  route("configuracao", "routes/Configuracao.jsx"),
 ];
