@@ -20,27 +20,57 @@ export default function RelatorioReservas() {
   const [usoFiltro, setUsoFiltro] = useState("");
 
   useEffect(() => {
-    async function loadSalas() {
+    async function loadRelatório() {
       try {
         setLoading(true);
         setError(null);
         const token = localStorage.getItem("token");
-        const response = await fetch("/api/reports/rooms", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-        if (!response.ok) throw new Error("Falha ao carregar relatórios.");
-        const data = await response.json();
-        setSalas(data);
+        
+        // Carregar salas e reservas
+        const [roomsRes, bookingsRes] = await Promise.all([
+          fetch("/api/rooms/all", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }),
+          fetch("/api/bookings/admin/all", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }),
+        ]);
+        
+        if (!roomsRes.ok || !bookingsRes.ok) {
+          throw new Error("Falha ao carregar dados para o relatório.");
+        }
+        
+        const rooms = await roomsRes.json();
+        const bookings = await bookingsRes.json();
+        
+        // Processar dados para exibição
+        const salasProcessadas = rooms.map(room => ({
+          id: room.id,
+          name: room.name,
+          location: room.location,
+          notes: room.notes,
+          bookable: room.bookable,
+          bookings: bookings.filter(b => b.roomId === room.id),
+          totalReservas: bookings.filter(b => b.roomId === room.id).length,
+          reservasAprovadas: bookings.filter(b => b.roomId === room.id && b.status === 'APPROVED').length,
+          reservasPendentes: bookings.filter(b => b.roomId === room.id && b.status === 'PENDING').length,
+          reservasRecusadas: bookings.filter(b => b.roomId === room.id && b.status === 'REJECTED').length,
+        }));
+        
+        setSalas(salasProcessadas);
       } catch (err) {
-        setError(err.message);
+        setError(err.message || "Erro ao carregar relatórios.");
       } finally {
         setLoading(false);
       }
     }
-    loadSalas();
+    loadRelatório();
   }, []);
 
   // Aplicar filtros

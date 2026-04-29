@@ -24,9 +24,15 @@ const menuActions = [
     to: "/confirmar",
   },
   {
+    icon: <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M11 20H7a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v10" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+    title: "Solicitações de Reserva",
+    desc: "Aprove ou rejeite solicitações",
+    to: "/coordenador-solicitacoes",
+  },
+  {
     icon: <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>,
     title: "Todas as Reservas",
-    desc: "Visualize e aprove reservas",
+    desc: "Visualize todas as reservas",
     to: "/todas-reservas",
     
   },
@@ -251,7 +257,13 @@ export default function Coordenador() {
               </div>
               <div className="reserva-time">
                 {formatDate(booking.bookingDate)}<br />
-                {formatTime(booking.periodStart)}–{formatTime(booking.periodEnd)}
+                {booking.periods && booking.periods.length > 0 ? (
+                  <>
+                    {formatTime(booking.periods[0].periodStart)}–{formatTime(booking.periods[booking.periods.length - 1].periodEnd)}
+                  </>
+                ) : (
+                  "--:-- – --:--"
+                )}
                 <div className={`reserva-status ${statusClasses[booking.status] || "status-ok"}`}>
                   {statusLabels[booking.status] || booking.status}
                 </div>

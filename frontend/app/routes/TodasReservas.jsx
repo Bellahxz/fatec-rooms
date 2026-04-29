@@ -8,10 +8,6 @@ export default function TodasReservas() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Modal para rejeitar
-  const [rejeitandoId, setRejeitandoId] = useState(null);
-  const [notaRejeicao, setNotaRejeicao] = useState("");
-
   function traduzirStatus(status) {
     switch ((status || "").toUpperCase()) {
       case "PENDING":
@@ -100,66 +96,6 @@ export default function TodasReservas() {
     setDataSolicitacaoFiltro("");
     setTipoReservaFiltro("");
   };
-
-  async function aprovarReserva(id) {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setError("Faça login para aprovar a reserva.");
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/bookings/admin/${id}/review`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ approved: true }),
-      });
-      if (!response.ok) {
-        throw new Error("Falha ao aprovar a reserva.");
-      }
-      setReservas((prev) =>
-        prev.map((r) =>
-          r.id === id ? { ...r, status: "Aceita" } : r
-        )
-      );
-    } catch (err) {
-      setError(err.message || "Erro ao aprovar a reserva.");
-    }
-  }
-
-  async function rejeitarReserva(id) {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setError("Faça login para rejeitar a reserva.");
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/bookings/admin/${id}/review`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ approved: false, rejectReason: notaRejeicao }),
-      });
-      if (!response.ok) {
-        throw new Error("Falha ao rejeitar a reserva.");
-      }
-      setReservas((prev) =>
-        prev.map((r) =>
-          r.id === id ? { ...r, status: "Recusada" } : r
-        )
-      );
-      setRejeitandoId(null);
-      setNotaRejeicao("");
-    } catch (err) {
-      setError(err.message || "Erro ao rejeitar a reserva.");
-    }
-  }
 
   const reservasFiltradas = reservas.filter((reserva) => {
     const buscaLower = busca.toLowerCase();
@@ -329,52 +265,6 @@ export default function TodasReservas() {
                   </div>
 
                 </div>
-
-                {reserva.status === "Pendente" && (
-                  <div className="acoes">
-                    <button
-                      className="btn-aprovar"
-                      onClick={() => aprovarReserva(reserva.id)}
-                    >
-                      Aprovar
-                    </button>
-
-                    <button
-                      className="btn-rejeitar"
-                      onClick={() => setRejeitandoId(reserva.id)}
-                    >
-                      Rejeitar
-                    </button>
-                  </div>
-                )}
-
-                {rejeitandoId === reserva.id && (
-                  <div className="modal-rejeicao">
-                    <textarea
-                      placeholder="Digite uma observação para a rejeição..."
-                      value={notaRejeicao}
-                      onChange={(e) => setNotaRejeicao(e.target.value)}
-                      className="input-nota"
-                    />
-                    <div className="botoes-modal">
-                      <button
-                        className="btn-confirmar"
-                        onClick={() => rejeitarReserva(reserva.id)}
-                      >
-                        Confirmar Rejeição
-                      </button>
-                      <button
-                        className="btn-cancelar"
-                        onClick={() => {
-                          setRejeitandoId(null);
-                          setNotaRejeicao("");
-                        }}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             ))}
           </div>

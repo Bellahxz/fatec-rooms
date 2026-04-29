@@ -12,14 +12,22 @@ export default function UserProfile() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+
   const [user, setUser] = useState({
     firstname: "",
     lastname: "",
     email: "",
     authlevel: null,
+  });
+
+  const [editando, setEditando] = useState(false);
+
+  const [formData, setFormData] = useState({
+    firstname: "",
+    lastname: "",
+    email: "",
     password: "",
   });
-  const [editando, setEditando] = useState(false);
 
   const token = localStorage.getItem("token");
 
@@ -28,42 +36,50 @@ export default function UserProfile() {
       navigate("/");
       return;
     }
-
-    async function fetchUser() {
-      try {
-        const response = await fetch(`${API_URL}/users/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error("Erro ao carregar dados do usuário");
-        }
-
-        const data = await response.json();
-        setUser({
-          firstname: data.firstname || "",
-          lastname: data.lastname || "",
-          email: data.email || "",
-          authlevel: data.authlevel,
-          password: "",
-        });
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     fetchUser();
   }, [navigate, token]);
 
-  function handleChange(e) {
-    const { name, value } = e.target;
-    setUser((prev) => ({ ...prev, [name]: value }));
+  async function fetchUser() {
+    try {
+      const response = await fetch(`${API_URL}/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) throw new Error("Erro ao carregar dados do usuário");
+
+      const data = await response.json();
+
+      setUser({
+        firstname: data.firstname || "",
+        lastname: data.lastname || "",
+        email: data.email || "",
+        authlevel: data.authlevel,
+      });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
+  function handleEditClick() {
+    setFormData({
+      firstname: user.firstname,
+      lastname: user.lastname,
+      email: user.email,
+      password: "",
+    });
+    setError(null);
+    setSuccess(null);
+    setEditando(true);
+  }
+
+  function handleChange(e) {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  }
+
+  // ✅ ATUALIZADO COM FLUXO CORRETO
   async function handleSubmit(e) {
     e.preventDefault();
     setSaving(true);
@@ -71,6 +87,7 @@ export default function UserProfile() {
     setSuccess(null);
 
     try {
+      // 🔹 Atualiza perfil
       const response = await fetch(`${API_URL}/users/me`, {
         method: "PUT",
         headers: {
@@ -78,28 +95,55 @@ export default function UserProfile() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          firstname: user.firstname,
-          lastname: user.lastname,
-          email: user.email,
-          password: user.password || null,
+          firstname: formData.firstname,
+          lastname: formData.lastname,
+          email: formData.email,
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || "Erro ao atualizar perfil");
       }
 
       const data = await response.json();
+
+      // 🔹 Se digitou senha → solicita email de redefinição
+      if (formData.password) {
+        const passResponse = await fetch(
+          `${API_URL}/users/password/request`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: formData.email,
+            }),
+          }
+        );
+
+        if (!passResponse.ok) {
+          throw new Error(
+            "Perfil atualizado, mas erro ao solicitar troca de senha"
+          );
+        }
+
+        setSuccess(
+          "Perfil atualizado! Verifique seu e-mail para redefinir a senha."
+        );
+      } else {
+        setSuccess("Perfil atualizado com sucesso!");
+      }
+
       setUser({
         firstname: data.firstname,
         lastname: data.lastname,
         email: data.email,
         authlevel: data.authlevel,
-        password: "",
       });
+
       setEditando(false);
-      setSuccess("Perfil atualizado com sucesso!");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -154,7 +198,7 @@ export default function UserProfile() {
               <p><strong>Área de Atuação:</strong> {getCargoLabel(user.authlevel)}</p>
             </div>
 
-            <button className="btn-edit" onClick={() => setEditando(true)}>
+            <button className="btn-edit" onClick={handleEditClick}>
               Editar Informações
             </button>
           </div>
@@ -167,7 +211,7 @@ export default function UserProfile() {
               <input
                 type="text"
                 name="firstname"
-                value={user.firstname}
+                value={formData.firstname}
                 onChange={handleChange}
                 required
               />
@@ -178,7 +222,7 @@ export default function UserProfile() {
               <input
                 type="text"
                 name="lastname"
-                value={user.lastname}
+                value={formData.lastname}
                 onChange={handleChange}
                 required
               />
@@ -189,18 +233,20 @@ export default function UserProfile() {
               <input
                 type="email"
                 name="email"
-                value={user.email}
+                value={formData.email}
                 onChange={handleChange}
                 required
               />
             </div>
 
             <div className="form-group">
-              <label>Nova Senha (deixe em branco para manter a atual)</label>
+              <label>
+                Nova Senha (você receberá um e-mail para confirmar)
+              </label>
               <input
                 type="password"
                 name="password"
-                value={user.password}
+                value={formData.password}
                 onChange={handleChange}
                 placeholder="••••••••"
               />
@@ -217,7 +263,12 @@ export default function UserProfile() {
               >
                 Cancelar
               </button>
-              <button type="submit" className="btn-submit" disabled={saving}>
+
+              <button
+                type="submit"
+                className="btn-submit"
+                disabled={saving}
+              >
                 {saving ? "Salvando..." : "Salvar Alterações"}
               </button>
             </div>

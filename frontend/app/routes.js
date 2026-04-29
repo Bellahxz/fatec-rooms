@@ -20,4 +20,5 @@ export default [
   route("relatorio-reservas", "routes/RelatorioReservas.jsx"),
   route("todas-reservas", "routes/TodasReservas.jsx"),
   route("configuracao", "routes/Configuracao.jsx"),
+  route("coordenador-solicitacoes", "routes/CoordenadorSolicitacoes.jsx"),
 ];

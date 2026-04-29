@@ -278,7 +278,13 @@ export default function Professor() {
                     </div>
                     <div className="reserva-time">
                       {formatDate(booking.bookingDate)}<br />
-                      {formatTime(booking.periodStart)}–{formatTime(booking.periodEnd)}
+                      {booking.periods && booking.periods.length > 0 ? (
+                        <>
+                          {formatTime(booking.periods[0].periodStart)}–{formatTime(booking.periods[booking.periods.length - 1].periodEnd)}
+                        </>
+                      ) : (
+                        "--:-- – --:--"
+                      )}
                       <div className={`reserva-status ${statusClasses[booking.status] || "status-ok"}`}>
                         {statusLabels[booking.status] || booking.status}
                       </div>
