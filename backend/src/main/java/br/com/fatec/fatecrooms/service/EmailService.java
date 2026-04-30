@@ -20,6 +20,12 @@ public class EmailService {
     @Value("${app.frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
+    @Value("${spring.mail.username}")
+    private String username;
+
+    @Value("${spring.mail.password}")
+    private String password;
+
     /**
      * Envia e-mail com link/token para redefinição de senha.
      *
@@ -43,6 +49,12 @@ public class EmailService {
                         "Atenciosamente,\n" +
                         "Equipe Fatec Rooms"
         );
+
+        log.info("Username: {}", username);
+        log.info("Password: {}", password);
+        log.info("Reset link gerado: {}", resetLink);
+        log.info("Loaded username: {}", username);
+        log.info("Loaded password: {}", password != null ? "******" : "null");
 
         try {
             mailSender.send(message);

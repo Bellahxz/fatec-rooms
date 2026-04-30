@@ -26,7 +26,6 @@ export default function UserProfile() {
     firstname: "",
     lastname: "",
     email: "",
-    password: "",
   });
 
   const token = localStorage.getItem("token");
@@ -67,7 +66,6 @@ export default function UserProfile() {
       firstname: user.firstname,
       lastname: user.lastname,
       email: user.email,
-      password: "",
     });
     setError(null);
     setSuccess(null);
@@ -79,7 +77,6 @@ export default function UserProfile() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   }
 
-  // ✅ ATUALIZADO COM FLUXO CORRETO
   async function handleSubmit(e) {
     e.preventDefault();
     setSaving(true);
@@ -87,7 +84,6 @@ export default function UserProfile() {
     setSuccess(null);
 
     try {
-      // 🔹 Atualiza perfil
       const response = await fetch(`${API_URL}/users/me`, {
         method: "PUT",
         headers: {
@@ -108,46 +104,38 @@ export default function UserProfile() {
 
       const data = await response.json();
 
-      // 🔹 Se digitou senha → solicita email de redefinição
-      if (formData.password) {
-        const passResponse = await fetch(
-          `${API_URL}/users/password/request`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              email: formData.email,
-            }),
-          }
-        );
-
-        if (!passResponse.ok) {
-          throw new Error(
-            "Perfil atualizado, mas erro ao solicitar troca de senha"
-          );
-        }
-
-        setSuccess(
-          "Perfil atualizado! Verifique seu e-mail para redefinir a senha."
-        );
-      } else {
-        setSuccess("Perfil atualizado com sucesso!");
-      }
-
+      setSuccess("Perfil atualizado com sucesso!");
       setUser({
         firstname: data.firstname,
         lastname: data.lastname,
         email: data.email,
         authlevel: data.authlevel,
       });
-
       setEditando(false);
     } catch (err) {
       setError(err.message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSolicitarTrocaSenha() {
+    setError(null);
+    setSuccess(null);
+    try {
+      const response = await fetch(`${API_URL}/users/password/request`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email }),
+      });
+
+      if (!response.ok) throw new Error("Erro ao solicitar troca de senha");
+
+      setSuccess(
+        `E-mail de redefinição de senha enviado para ${user.email}. Verifique sua caixa de entrada.`
+      );
+    } catch (err) {
+      setError(err.message);
     }
   }
 
@@ -201,6 +189,19 @@ export default function UserProfile() {
             <button className="btn-edit" onClick={handleEditClick}>
               Editar Informações
             </button>
+
+            <button
+              className="btn-edit"
+              style={{
+                marginTop: 10,
+                background: "transparent",
+                border: "1.5px solid #6B6B6B",
+                color: "#6B6B6B",
+              }}
+              onClick={handleSolicitarTrocaSenha}
+            >
+              Alterar senha por e-mail
+            </button>
           </div>
         ) : (
           <form className="user-form" onSubmit={handleSubmit}>
@@ -239,19 +240,6 @@ export default function UserProfile() {
               />
             </div>
 
-            <div className="form-group">
-              <label>
-                Nova Senha (você receberá um e-mail para confirmar)
-              </label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-              />
-            </div>
-
             <div className="form-actions">
               <button
                 type="button"
@@ -259,6 +247,7 @@ export default function UserProfile() {
                 onClick={() => {
                   setEditando(false);
                   setError(null);
+                  setSuccess(null);
                 }}
               >
                 Cancelar

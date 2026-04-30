@@ -21,4 +21,6 @@ export default [
   route("todas-reservas", "routes/TodasReservas.jsx"),
   route("configuracao", "routes/Configuracao.jsx"),
   route("coordenador-solicitacoes", "routes/CoordenadorSolicitacoes.jsx"),
+  route("redefinir-senha", "routes/RedefinirSenha.jsx"),
+  route("esqueci-senha", "routes/EsqueciSenha.jsx"),
 ];

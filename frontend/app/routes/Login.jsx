@@ -12,10 +12,7 @@ export default function Login() {
     const [submitted, setSubmitted] = useState(false);
     const [error, setError] = useState(null);
     const [showPassword, setShowPassword] = useState(false);
-    const [form, setForm] = useState({
-        email: "",
-        senha: "",
-    });
+    const [form, setForm] = useState({ email: "", senha: "" });
     const navigate = useNavigate();
 
     function handleChange(e) {
@@ -25,23 +22,16 @@ export default function Login() {
     function parseLoginError(message, status) {
         if (!message) {
             return status === 401
-                ? 'E-mail ou senha incorretos. Verifique seus dados e tente novamente.'
-                : 'Erro no login. Tente novamente mais tarde.';
+                ? "E-mail ou senha incorretos. Verifique seus dados e tente novamente."
+                : "Erro no login. Tente novamente mais tarde.";
         }
-
         const text = message.toLowerCase();
-        if (text.includes('usuário ou senha inválidos') || text.includes('credenciais')) {
-            return 'E-mail ou senha incorretos. Verifique seus dados e tente novamente.';
-        }
-        if (text.includes('cadastro ainda não foi aprovado') || text.includes('não foi aprovado')) {
-            return 'Seu cadastro ainda não foi aprovado por um coordenador. Aguarde aprovação antes de entrar.';
-        }
-        if (text.includes('enabled') || text.includes('bloqueado')) {
-            return 'Sua conta está bloqueada. Entre em contato com o coordenador.';
-        }
-        if (text.includes('senha')) {
-            return message;
-        }
+        if (text.includes("usuário ou senha inválidos") || text.includes("credenciais"))
+            return "E-mail ou senha incorretos. Verifique seus dados e tente novamente.";
+        if (text.includes("cadastro ainda não foi aprovado") || text.includes("não foi aprovado"))
+            return "Seu cadastro ainda não foi aprovado por um coordenador. Aguarde aprovação antes de entrar.";
+        if (text.includes("enabled") || text.includes("bloqueado"))
+            return "Sua conta está bloqueada. Entre em contato com o coordenador.";
         return message;
     }
 
@@ -50,42 +40,37 @@ export default function Login() {
         setError(null);
 
         if (!form.email.trim() || !form.senha.trim()) {
-            setError('Preencha e-mail e senha para continuar.');
+            setError("Preencha e-mail e senha para continuar.");
             return;
         }
 
         try {
-            const response = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    email: form.email,
-                    password: form.senha
-                })
+            const response = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: form.email, password: form.senha }),
             });
+
             if (!response.ok) {
-                let errorMessage = 'Erro no login';
+                let errorMessage = "Erro no login";
                 try {
                     const errorData = await response.json();
-                    errorMessage = parseLoginError(errorData.message || errorData.error || '', response.status);
-                } catch (e) {
+                    errorMessage = parseLoginError(errorData.message || errorData.error || "", response.status);
+                } catch {
                     const text = await response.text();
                     errorMessage = parseLoginError(text, response.status);
                 }
                 throw new Error(errorMessage);
             }
+
             const data = await response.json();
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('username', data.username);
-            localStorage.setItem('authlevel', data.authlevel);
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("username", data.username);
+            localStorage.setItem("authlevel", data.authlevel);
             setSubmitted(true);
-            if (data.authlevel === 1) {
-                navigate('/coordenador');
-            } else {
-                navigate('/professor');
-            }
+
+            if (data.authlevel === 1) navigate("/coordenador");
+            else navigate("/professor");
         } catch (err) {
             setError(err.message);
         }
@@ -103,8 +88,6 @@ export default function Login() {
             />
 
             <div className="content">
-
-                {/* Formulário de Login */}
                 {submitted ? (
                     <div className="success-msg">
                         <div className="success-icon">
@@ -122,19 +105,20 @@ export default function Login() {
                                 <p>{error}</p>
                             </div>
                         )}
+
                         <form onSubmit={handleSubmit}>
                             <div className="form-group-cadastro">
                                 <label>E-mail institucional</label>
                                 <input
                                     type="email"
                                     name="email"
-                                    placeholder="Ex:joao@professor.cps.sp.gov.br"
+                                    placeholder="Ex: joao@professor.cps.sp.gov.br"
                                     value={form.email}
                                     onChange={handleChange}
                                     required
                                 />
                             </div>
-                        
+
                             <div className="form-group-cadastro">
                                 <label>Senha</label>
                                 <div className="input-with-icon">
@@ -162,14 +146,18 @@ export default function Login() {
                             </button>
                         </form>
 
+                <div className="cadastro-link">
+                            <a href="/cadastro" className="btn">
+                                Esqueci minha senha
+                            </a>
+                        </div>
                         <div className="cadastro-link">
                             <h3>Não possui cadastro?</h3>
                             <p>Crie sua conta para começar a utilizar o sistema.</p>
-
-                            
-                            <a href="/cadastro" className="btn-submit-cadastro">Cadastrar-se</a>
+                            <a href="/cadastro" className="btn-submit-cadastro">
+                                Cadastrar-se
+                            </a>
                         </div>
-
                     </>
                 )}
             </div>
