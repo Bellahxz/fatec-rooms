@@ -112,6 +112,19 @@ export default function SolicitaReserva() {
         setModalOpen(false);
     }
 
+    function parseBackendError(errorText) {
+        // Tenta extrair a mensagem de antecedência mínima do backend
+        const minDaysMatch = errorText.match(/mínimo\s+(\d+)\s+dia/i);
+        const earliestMatch = errorText.match(/(\d{4}-\d{2}-\d{2})/);
+        if (minDaysMatch && earliestMatch) {
+            const minAdvanceDays = minDaysMatch[1];
+            const [year, month, day] = earliestMatch[1].split("-");
+            const earliestAllowed = `${day}/${month}/${year}`;
+            return `A reserva deve ser feita com no mínimo ${minAdvanceDays} dia(s) de antecedência. Data mais próxima permitida: ${earliestAllowed}.`;
+        }
+        return null;
+    }
+
     async function handleSubmit(e) {
         e.preventDefault();
         setError(null);
@@ -146,7 +159,8 @@ export default function SolicitaReserva() {
 
             if (!res.ok) {
                 const errorText = await res.text();
-                throw new Error(errorText || "Falha ao solicitar a reserva.");
+                const friendlyMessage = parseBackendError(errorText);
+                throw new Error(friendlyMessage || errorText || "Falha ao solicitar a reserva.");
             }
 
             const totalPeriods = selectedPeriodIds.length;

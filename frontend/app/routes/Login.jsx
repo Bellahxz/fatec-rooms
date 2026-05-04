@@ -146,8 +146,18 @@ export default function Login() {
                             </button>
                         </form>
 
-                <div className="cadastro-link">
-                            <a href="/cadastro" className="btn">
+                        <div style={{ textAlign: "center", marginTop: 8 }}>
+                            <a
+                                href="/esqueci-senha"
+                                style={{
+                                    color: "#1976d2",
+                                    fontSize: 13,
+                                    textDecoration: "none",
+                                    fontWeight: 500,
+                                }}
+                                onMouseOver={(e) => (e.target.style.textDecoration = "underline")}
+                                onMouseOut={(e) => (e.target.style.textDecoration = "none")}
+                            >
                                 Esqueci minha senha
                             </a>
                         </div>

@@ -29,7 +29,6 @@ export default function RedefinirSenha() {
     }
 
     const strength = getStrength(senha);
-    const strengthColors = ["", "#E24B4A", "#EF9F27", "#639922", "#0F6E56"];
     const strengthLabels = ["", "Fraca", "Regular", "Boa", "Forte"];
 
     async function handleSubmit(e) {
@@ -53,7 +52,7 @@ export default function RedefinirSenha() {
             });
 
             if (!response.ok) {
-                throw new Error("Erro ao redefinir senha");
+                throw new Error();
             }
 
             setSucesso(true);
@@ -64,16 +63,15 @@ export default function RedefinirSenha() {
         }
     }
 
-    // ❌ TOKEN INVÁLIDO
     if (isInvalid) {
         return (
             <>
-                <Navbar activePage="Login" />
-                <PageHero
+                {/* <Navbar activePage="Login" /> */}
+                {/* <PageHero
                     tag="Segurança"
                     title="Redefinir Senha"
                     description="Link inválido ou expirado"
-                />
+                /> */}
 
                 <div className="content">
                     <h3>Link inválido ou expirado</h3>
@@ -85,21 +83,20 @@ export default function RedefinirSenha() {
                     </button>
                 </div>
 
-                <Footer />
+                {/* <Footer /> */}
             </>
         );
     }
 
-    // ✅ SUCESSO
     if (sucesso) {
         return (
             <>
-                <Navbar activePage="Login" />
-                <PageHero
+                {/* <Navbar activePage="Login" /> */}
+                {/* <PageHero
                     tag="Segurança"
                     title="Senha redefinida"
                     description="Sua senha foi atualizada"
-                />
+                /> */}
 
                 <div className="content">
                     <h3>Senha redefinida com sucesso!</h3>
@@ -111,27 +108,26 @@ export default function RedefinirSenha() {
                     </button>
                 </div>
 
-                <Footer />
+                {/* <Footer /> */}
             </>
         );
     }
 
     return (
         <>
-            <Navbar activePage="Login" />
+            {/* <Navbar activePage="Login" /> */}
 
-            <PageHero
+            {/* <PageHero
                 tag="Segurança"
                 title="Redefinir Senha"
                 description="Crie uma nova senha segura"
-            />
+            /> */}
 
             <div className="content">
                 {erro && <div className="error-msg">{erro}</div>}
 
                 <form onSubmit={handleSubmit} className="form-reset-senha">
 
-                    {/* SENHA */}
                     <div className="form-group-cadastro">
                         <label>Nova senha</label>
 
@@ -147,42 +143,19 @@ export default function RedefinirSenha() {
                             <button
                                 type="button"
                                 className="password-toggle"
-                                onClick={() => setShowSenha((v) => !v)}
+                                onClick={() => setShowSenha(v => !v)}
                             >
                                 {showSenha ? "🙈" : "👁️"}
                             </button>
                         </div>
 
-                        {/* FORÇA DA SENHA */}
                         {senha.length > 0 && (
-                            <div style={{ display: "flex", gap: 4, alignItems: "center", marginTop: 8 }}>
-                                {[1, 2, 3, 4].map((i) => (
-                                    <div
-                                        key={i}
-                                        style={{
-                                            flex: 1,
-                                            height: 4,
-                                            borderRadius: 2,
-                                            background: i <= strength ? strengthColors[strength] : "#E8E8E8",
-                                            transition: "background 0.3s",
-                                        }}
-                                    />
-                                ))}
-                                <span
-                                    style={{
-                                        fontSize: 12,
-                                        marginLeft: 8,
-                                        minWidth: 48,
-                                        color: strengthColors[strength],
-                                    }}
-                                >
-                                    {strengthLabels[strength]}
-                                </span>
+                            <div>
+                                {strengthLabels[strength]}
                             </div>
                         )}
                     </div>
 
-                    {/* CONFIRMAR SENHA */}
                     <div className="form-group-cadastro">
                         <label>Confirmar nova senha</label>
 
@@ -198,36 +171,26 @@ export default function RedefinirSenha() {
                             <button
                                 type="button"
                                 className="password-toggle"
-                                onClick={() => setShowConfirma((v) => !v)}
+                                onClick={() => setShowConfirma(v => !v)}
                             >
                                 {showConfirma ? "🙈" : "👁️"}
                             </button>
                         </div>
                     </div>
 
-                    {/* BOTÃO */}
                     <button type="submit" className="btn-submit-cadastro" disabled={loading}>
                         {loading ? "Salvando..." : "Salvar nova senha"}
                     </button>
                 </form>
 
                 <div style={{ textAlign: "center", marginTop: 16 }}>
-                    <a
-                        href="/"
-                        style={{
-                            fontSize: 13,
-                            color: "#6B6B6B",
-                            fontFamily: "Sora, sans-serif",
-                            fontWeight: 600,
-                            textDecoration: "none",
-                        }}
-                    >
+                    <a href="/">
                         Voltar para o login
                     </a>
                 </div>
             </div>
 
-            <Footer />
+            {/* <Footer /> */}
         </>
     );
 }
