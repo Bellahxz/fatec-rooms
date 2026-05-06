@@ -1,3 +1,5 @@
+ALTER TABLE bookings DROP FOREIGN KEY fk_bookings_period;
+
 ALTER TABLE bookings DROP COLUMN period_id;
 
 CREATE TABLE booking_periods (
