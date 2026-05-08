@@ -63,7 +63,7 @@ export default function GerenciarSalas() {
       <div className="content">
         <div className="section-title">
           Salas cadastradas
-          <Link className="see-all" to="/salas-adicionar">
+          <Link className="see-all" to="/cadastro-salas">
             Adicionar sala
           </Link>
         </div>
