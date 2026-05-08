@@ -13,6 +13,7 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
 const DOMINIOS_PERMITIDOS = [
     "professor.cps.sp.gov.br",
     "cps.sp.gov.br",
+    "fatec.sp.gov.br",
     "gmail.com",
 ];
 
