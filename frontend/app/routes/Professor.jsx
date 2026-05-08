@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import PageHero from "../components/PageHero";
 
+
 const menuActions = [
   {
     icon: <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18M9 21V9" /></svg>,
@@ -59,6 +60,12 @@ export default function Professor() {
   const [periods, setPeriods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Estado para o calendário interativo
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [hoveredDay, setHoveredDay] = useState(null);
+  const [tooltipData, setTooltipData] = useState(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     async function loadData() {
@@ -134,41 +141,108 @@ export default function Professor() {
     };
   }, [bookings, rooms.length]);
 
-  const calendarData = useMemo(() => {
-    const month = new Date();
-    const year = month.getFullYear();
-    const monthName = month.toLocaleString("pt-BR", { month: "long", year: "numeric" });
-    const firstDay = new Date(year, month.getMonth(), 1);
-    const startOffset = firstDay.getDay();
-    const daysInMonth = new Date(year, month.getMonth() + 1, 0).getDate();
+  // Navegação do calendário
+  const changeMonth = (delta) => {
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + delta, 1));
+    setHoveredDay(null);
+    setTooltipData(null);
+  };
 
-    const dayStatus = {};
+  const goToToday = () => {
+    setCurrentDate(new Date());
+    setHoveredDay(null);
+    setTooltipData(null);
+  };
+
+  // Dados do calendário interativo
+  const calendarData = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const monthName = currentDate.toLocaleString("pt-BR", { month: "long", year: "numeric" });
+    const firstDay = new Date(year, month, 1);
+    const startOffset = firstDay.getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // Agrupa reservas por dia
+    const dayBookings = {};
     bookings.forEach((booking) => {
       const bookingDate = new Date(booking.bookingDate);
-      if (bookingDate.getMonth() !== month.getMonth() || bookingDate.getFullYear() !== year) return;
+      if (bookingDate.getMonth() !== month || bookingDate.getFullYear() !== year) return;
       const day = bookingDate.getDate();
-      if (booking.status === "APPROVED") {
-        dayStatus[day] = "confirmed";
-      } else if (booking.status === "PENDING") {
-        dayStatus[day] = dayStatus[day] === "confirmed" ? "confirmed" : "pending";
-      } else if (booking.status === "CANCELLED" || booking.status === "REJECTED") {
-        dayStatus[day] = dayStatus[day] ? dayStatus[day] : "cancelled";
+      
+      if (!dayBookings[day]) {
+        dayBookings[day] = [];
       }
+      
+      dayBookings[day].push({
+        ...booking,
+        date: bookingDate,
+      });
     });
 
-    const cells = Array.from({ length: startOffset }, () => ({ date: "", status: "empty" }))
-      .concat(
-        Array.from({ length: daysInMonth }, (_, index) => {
-          const day = index + 1;
-          return {
-            date: day,
-            status: dayStatus[day] || "none",
-          };
-        })
-      );
+    // Ordena reservas de cada dia por horário
+    Object.keys(dayBookings).forEach(day => {
+      dayBookings[day].sort((a, b) => {
+        const aStart = a.periods?.[0]?.periodStart || "";
+        const bStart = b.periods?.[0]?.periodStart || "";
+        return aStart.localeCompare(bStart);
+      });
+    });
 
-    return { monthName, cells };
-  }, [bookings]);
+    const cells = Array.from({ length: startOffset }, () => ({ 
+      date: "", 
+      status: "empty",
+      bookings: []
+    }))
+    .concat(
+      Array.from({ length: daysInMonth }, (_, index) => {
+        const day = index + 1;
+        const dayBookingsList = dayBookings[day] || [];
+        
+        let status = "none";
+        if (dayBookingsList.length > 0) {
+          const hasApproved = dayBookingsList.some(b => b.status === "APPROVED");
+          const hasPending = dayBookingsList.some(b => b.status === "PENDING");
+          
+          if (hasApproved) {
+            status = "confirmed";
+          } else if (hasPending) {
+            status = "pending";
+          } else {
+            status = "cancelled";
+          }
+        }
+        
+        return {
+          date: day,
+          status: status,
+          bookings: dayBookingsList,
+        };
+      })
+    );
+
+    return { monthName, cells, year, month };
+  }, [bookings, currentDate]);
+
+  // Manipuladores de hover para tooltip
+  const handleMouseEnter = (event, cell, day) => {
+    if (!cell.date || cell.bookings.length === 0) return;
+    
+    setHoveredDay(day);
+    setTooltipData(cell.bookings);
+    setTooltipPosition({ x: event.clientX, y: event.clientY });
+  };
+
+  const handleMouseLeave = () => {
+    setHoveredDay(null);
+    setTooltipData(null);
+  };
+
+  const handleMouseMove = (event) => {
+    if (tooltipData) {
+      setTooltipPosition({ x: event.clientX, y: event.clientY });
+    }
+  };
 
   if (loading) {
     return (
@@ -269,7 +343,7 @@ export default function Professor() {
                   </div>
                 </div>
               ) : (
-                bookings.map((booking) => (
+                bookings.slice(0, 5).map((booking) => (
                   <div key={booking.id} className="reserva-item">
                     <div className={`reserva-dot ${statusClasses[booking.status] || "dot-green"}`} />
                     <div className="reserva-info">
@@ -303,7 +377,6 @@ export default function Professor() {
                   <span>Salas disponíveis</span>
                   <strong>{rooms.length}</strong>
                 </div>
-
                 <div>
                   <span>Reservas pendentes</span>
                   <strong>{summary.pendingReservations}</strong>
@@ -318,11 +391,13 @@ export default function Professor() {
             <div className="dashboard-panel calendar-card">
               <div className="calendar-header">
                 <div>
-                  <p className="calendar-month">{calendarData.monthName}</p>
-                  <h3>Calendário</h3>
+                  <button className="calendar-nav" onClick={() => changeMonth(-1)}>←</button>
+                  <span className="calendar-month">{calendarData.monthName}</span>
+                  <button className="calendar-nav" onClick={() => changeMonth(1)}>→</button>
                 </div>
-                <button className="calendar-action" type="button">Hoje</button>
+                <button className="calendar-action" onClick={goToToday}>Hoje</button>
               </div>
+              
               <div className="calendar-grid">
                 {weekDays.map((day) => (
                   <div key={day} className="calendar-day-name">{day}</div>
@@ -331,26 +406,70 @@ export default function Professor() {
                   <div
                     key={`${cell.date}-${index}`}
                     className={`calendar-cell ${cell.status !== "none" ? `calendar-${cell.status}` : ""}`}
+                    onMouseEnter={(e) => handleMouseEnter(e, cell, cell.date)}
+                    onMouseLeave={handleMouseLeave}
+                    onMouseMove={handleMouseMove}
                   >
                     {cell.date || ""}
                   </div>
                 ))}
               </div>
+              
               <div className="calendar-legend">
                 <div className="legend-item">
-                  <span className="legend-badge legend-confirmed" /> Confirmadas
+                  <span className="legend-badge legend-confirmed"></span> Confirmadas
                 </div>
                 <div className="legend-item">
-                  <span className="legend-badge legend-pending" /> Pendentes
+                  <span className="legend-badge legend-pending"></span> Pendentes
                 </div>
                 <div className="legend-item">
-                  <span className="legend-badge legend-cancelled" /> Canceladas
+                  <span className="legend-badge legend-cancelled"></span> Canceladas/Rejeitadas
                 </div>
               </div>
             </div>
           </aside>
         </div>
       </main>
+
+      {/* Tooltip flutuante para mostrar detalhes das reservas */}
+      {tooltipData && hoveredDay && (
+        <div
+          className="calendar-tooltip"
+          style={{
+            position: "fixed",
+            left: tooltipPosition.x + 15,
+            top: tooltipPosition.y - 10,
+            zIndex: 1000,
+          }}
+        >
+          <div className="tooltip-header">
+            <strong> Dia {hoveredDay}</strong>
+            <span>{tooltipData.length} reserva(s)</span>
+          </div>
+          <div className="tooltip-list">
+            {tooltipData.map((booking, idx) => (
+              <div key={idx} className="tooltip-item">
+                <div className="tooltip-time">
+                  {booking.periods && booking.periods.length > 0 ? (
+                    `${formatTime(booking.periods[0].periodStart)} - ${formatTime(booking.periods[booking.periods.length - 1].periodEnd)}`
+                  ) : (
+                    "Horário não definido"
+                  )}
+                </div>
+                <div className="tooltip-room">
+                   {booking.roomName}
+                </div>
+                <div className="tooltip-subject">
+                   {booking.subject || "Sem assunto"}
+                </div>
+                <div className={`tooltip-status ${statusClasses[booking.status] || "status-ok"}`}>
+                  {statusLabels[booking.status] || booking.status}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <Footer />
     </>
