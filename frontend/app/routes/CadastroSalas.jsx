@@ -184,7 +184,7 @@ export default function CadastroSalas() {
                       }}
                     />
                     <label htmlFor="semNumero" className="checkbox-content">
-                      <div className="checkbox-icon">🚫</div>
+                    
                       <div>
                         <strong>Sem número de sala</strong>
                         <p>Utilizar quando não houver identificação</p>
@@ -230,7 +230,7 @@ export default function CadastroSalas() {
                   <div className="feature-grid">
                     <label className={`feature-card ${form.ar ? "active" : ""}`}>
                       <input type="checkbox" name="ar" checked={form.ar} onChange={handleChange} />
-                      <div className="feature-icon">❄️</div>
+                      
                       <div>
                         <strong>Ar-condicionado</strong>
                         <p>Controle de climatização</p>
@@ -238,7 +238,7 @@ export default function CadastroSalas() {
                     </label>
                     <label className={`feature-card ${form.tv ? "active" : ""}`}>
                       <input type="checkbox" name="tv" checked={form.tv} onChange={handleChange} />
-                      <div className="feature-icon">📺</div>
+                      
                       <div>
                         <strong>Televisão</strong>
                         <p>Equipamento multimídia</p>

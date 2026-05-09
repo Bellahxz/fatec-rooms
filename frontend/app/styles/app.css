@@ -1077,6 +1077,22 @@ button.menu-card {
   background: var(--red);
 }
 
+.btn-action.btn-save {
+  background: #2196F3;
+}
+
+.btn-action.btn-save:hover {
+  background: #1E88E5;
+}
+
+.btn-action.btn-cancel {
+  background: var(--red);
+}
+
+.btn-action.btn-cancel:hover {
+  background: var(--red-dark);
+}
+
 .reserva-item {
   justify-content: space-between;
   align-items: flex-start;
@@ -4161,6 +4177,57 @@ button {
     line-height: 1.5;
 }
 
+.modal-form {
+    display: grid;
+    gap: 18px;
+}
+
+.field-group {
+    display: grid;
+    gap: 10px;
+}
+
+.field-group label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #333;
+}
+
+.modal-box input,
+.modal-box select {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid #d8d8d8;
+    background: #fbfbfb;
+    font-size: 15px;
+    color: #222;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.modal-box input:focus,
+.modal-box select:focus {
+    outline: none;
+    border-color: rgba(33, 150, 243, 0.8);
+    box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.12);
+}
+
+.success-message {
+    background: #e8f4ff;
+    border: 1px solid #90caf9;
+    padding: 14px 16px;
+    border-radius: 14px;
+    color: #0b4d82;
+    font-weight: 600;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
 .modal-options {
     display: flex;
     gap: 1rem;
@@ -4528,3 +4595,7 @@ button {
     }
   }
 }
+.calendar-holiday { background: #fed7aa !important; color: #9a3412 !important; }
+.legend-holiday { background: #fb923c; }
+.dia-feriado { background: #fed7aa !important; color: #9a3412 !important; pointer-events: none; opacity: 0.7; }
+.box.laranja { background: #fb923c; }

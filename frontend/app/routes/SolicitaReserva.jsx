@@ -13,6 +13,7 @@ export default function SolicitaReserva() {
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [availability, setAvailability] = useState(null);
     const [myBookings, setMyBookings] = useState([]);
+    const [holidays, setHolidays] = useState([]);
     const [date, setDate] = useState(new Date());
     const [loadingPage, setLoadingPage] = useState(true);
     const [loadingAvailability, setLoadingAvailability] = useState(false);
@@ -41,9 +42,10 @@ export default function SolicitaReserva() {
                 setLoadingPage(true);
                 setError(null);
 
-                const [roomsRes, bookingsRes] = await Promise.all([
+                const [roomsRes, bookingsRes, holidaysRes] = await Promise.all([
                     fetch("/api/rooms", { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }),
                     fetch("/api/bookings/my", { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }),
+                    fetch("/api/holidays", { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }),
                 ]);
 
                 if (!roomsRes.ok) throw new Error("Falha ao carregar salas.");
@@ -51,6 +53,10 @@ export default function SolicitaReserva() {
 
                 setSalas(await roomsRes.json() || []);
                 setMyBookings(await bookingsRes.json() || []);
+                if (holidaysRes.ok) {
+                    const holidaysData = await holidaysRes.json();
+                    setHolidays(Array.isArray(holidaysData) ? holidaysData : []);
+                }
             } catch (err) {
                 setError(err.message || "Erro ao carregar a página.");
             } finally {
@@ -83,6 +89,22 @@ export default function SolicitaReserva() {
         }
     }
 
+    // Set de datas de feriado para lookup rápido
+    const holidayDateSet = new Set(holidays.map((h) => h.holidayDate));
+    const holidayByDate = {};
+    holidays.forEach((h) => { holidayByDate[h.holidayDate] = h; });
+
+    function isHolidayDate(isoDate) {
+        return holidayDateSet.has(isoDate);
+    }
+
+    function getISOFromDate(d) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${dd}`;
+    }
+
     function handleChange(e) {
         const { name, value, type, checked } = e.target;
         setForm(prev => {
@@ -113,7 +135,6 @@ export default function SolicitaReserva() {
     }
 
     function parseBackendError(errorText) {
-        // Tenta extrair a mensagem de antecedência mínima do backend
         const minDaysMatch = errorText.match(/mínimo\s+(\d+)\s+dia/i);
         const earliestMatch = errorText.match(/(\d{4}-\d{2}-\d{2})/);
         if (minDaysMatch && earliestMatch) {
@@ -135,12 +156,17 @@ export default function SolicitaReserva() {
             return;
         }
 
+        // Bloquear se for feriado
+        if (isHolidayDate(form.dataISO)) {
+            const h = holidayByDate[form.dataISO];
+            setError(`Não é possível reservar em feriados. "${h?.name || "Feriado"}" — ${form.data}.`);
+            return;
+        }
+
         const token = localStorage.getItem("token");
         if (!token) { navigate("/login"); return; }
 
         const notes = form.naoSeAplica ? "Não se aplica" : `Curso: ${form.curso || "-"}`;
-
-        // ── Envia UMA única reserva com todos os períodos ──
         const body = {
             roomId: form.roomId,
             periodIds: selectedPeriodIds.map(Number),
@@ -176,7 +202,6 @@ export default function SolicitaReserva() {
             setPeriodDropdownOpen(false);
             setForm(prev => ({ ...prev, espaco: "", roomId: null, motivo: "", curso: "", naoSeAplica: false }));
 
-            // Atualiza lista de reservas
             const updatedRes = await fetch("/api/bookings/my", {
                 headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
             });
@@ -222,12 +247,18 @@ export default function SolicitaReserva() {
 
                     <Calendar
                         onChange={value => {
+                            const isoDate = getISOFromDate(value);
+
+                            // Bloquear feriados
+                            if (isHolidayDate(isoDate)) {
+                                const h = holidayByDate[isoDate];
+                                setError(`Este dia é feriado: "${h?.name || "Feriado"}". Selecione outra data.`);
+                                return;
+                            }
+
+                            setError(null);
                             setDate(value);
-                            const y = value.getFullYear();
-                            const m = String(value.getMonth() + 1).padStart(2, "0");
-                            const d = String(value.getDate()).padStart(2, "0");
-                            const dataISO = `${y}-${m}-${d}`;
-                            setForm(prev => ({ ...prev, data: value.toLocaleDateString("pt-BR"), dataISO }));
+                            setForm(prev => ({ ...prev, data: value.toLocaleDateString("pt-BR"), dataISO: isoDate }));
                             setSelectedRoom(null);
                             setAvailability(null);
                             setSelectedPeriodIds([]);
@@ -235,16 +266,25 @@ export default function SolicitaReserva() {
                             setModalOpen(true);
                         }}
                         value={date}
+                        tileDisabled={({ date: d }) => {
+                            const iso = getISOFromDate(d);
+                            return isHolidayDate(iso);
+                        }}
                         tileClassName={({ date: d }) => {
-                            const y = d.getFullYear();
-                            const m = String(d.getMonth() + 1).padStart(2, "0");
-                            const dd = String(d.getDate()).padStart(2, "0");
-                            const iso = `${y}-${m}-${dd}`;
+                            const iso = getISOFromDate(d);
+                            if (isHolidayDate(iso)) return "dia-feriado";
                             if (iso === form.dataISO) return "dia-selecionado";
                             const st = roomStatusMap[iso];
                             if (st === "APPROVED") return "dia-aceita";
-                            if (st === "PENDING")  return "dia-pendente";
+                            if (st === "PENDING") return "dia-pendente";
                             if (st === "CANCELLED") return "dia-cancelada";
+                            return null;
+                        }}
+                        tileContent={({ date: d }) => {
+                            const iso = getISOFromDate(d);
+                            if (isHolidayDate(iso)) {
+                                return <span title={holidayByDate[iso]?.name} style={{ fontSize: "0.6rem", display: "block", lineHeight: 1 }}>🎉</span>;
+                            }
                             return null;
                         }}
                         locale="pt-BR"
@@ -258,6 +298,7 @@ export default function SolicitaReserva() {
                         <div><span className="box amarelo"></span> Pendente</div>
                         <div><span className="box vermelho"></span> Cancelada</div>
                         <div><span className="box cinza"></span> Selecionado</div>
+                        <div><span className="box laranja"></span> Feriado</div>
                     </div>
 
                     <div className="reservas-feitas">
@@ -267,9 +308,9 @@ export default function SolicitaReserva() {
                             {myBookings.map(booking => {
                                 const periods = booking.periods || [];
                                 const first = periods[0];
-                                const last  = periods[periods.length - 1];
+                                const last = periods[periods.length - 1];
                                 const horaInicio = first?.periodStart?.slice(0, 5) || "--:--";
-                                const horaFim    = last?.periodEnd?.slice(0, 5) || "--:--";
+                                const horaFim = last?.periodEnd?.slice(0, 5) || "--:--";
                                 return (
                                     <p key={booking.id}>
                                         <span className="hora">
@@ -310,7 +351,7 @@ export default function SolicitaReserva() {
                 {/* ── Formulário ── */}
                 <div className="div-forms-reserva">
                     <form onSubmit={handleSubmit}>
-                        {error   && <div className="form-title" style={{ color: "#b91c1c" }}>{error}</div>}
+                        {error && <div className="form-title" style={{ color: "#b91c1c" }}>{error}</div>}
                         {success && <div className="form-title" style={{ color: "#166534" }}>{success}</div>}
 
                         <div className="form-group-reserva">
@@ -347,20 +388,8 @@ export default function SolicitaReserva() {
                                         ) : (
                                             <>
                                                 <div style={{ marginBottom: 8, display: "flex", gap: 8 }}>
-                                                    <button
-                                                        type="button"
-                                                        style={{ fontSize: 12, padding: "2px 8px", borderRadius: 6, border: "1px solid #ccc", cursor: "pointer", background: "white" }}
-                                                        onClick={() => setSelectedPeriodIds(availablePeriods.map(p => p.periodId))}
-                                                    >
-                                                        Selecionar todos
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        style={{ fontSize: 12, padding: "2px 8px", borderRadius: 6, border: "1px solid #ccc", cursor: "pointer", background: "white" }}
-                                                        onClick={() => setSelectedPeriodIds([])}
-                                                    >
-                                                        Limpar
-                                                    </button>
+                                                    <button type="button" style={{ fontSize: 12, padding: "2px 8px", borderRadius: 6, border: "1px solid #ccc", cursor: "pointer", background: "white" }} onClick={() => setSelectedPeriodIds(availablePeriods.map(p => p.periodId))}>Selecionar todos</button>
+                                                    <button type="button" style={{ fontSize: 12, padding: "2px 8px", borderRadius: 6, border: "1px solid #ccc", cursor: "pointer", background: "white" }} onClick={() => setSelectedPeriodIds([])}>Limpar</button>
                                                 </div>
                                                 {availablePeriods.map(period => (
                                                     <label key={period.periodId} className="period-checkbox">
@@ -379,7 +408,6 @@ export default function SolicitaReserva() {
                                 )}
                             </div>
 
-                            {/* Resumo dos períodos selecionados */}
                             {selectedPeriodIds.length > 0 && (
                                 <div style={{ marginTop: 8, fontSize: 13, color: "#374151" }}>
                                     <strong>Selecionados:</strong>{" "}
@@ -394,26 +422,12 @@ export default function SolicitaReserva() {
 
                         <div className="form-group-reserva">
                             <label>Motivo:</label>
-                            <input
-                                type="text"
-                                name="motivo"
-                                placeholder="Descreva o motivo da reserva"
-                                value={form.motivo}
-                                onChange={handleChange}
-                                required
-                            />
+                            <input type="text" name="motivo" placeholder="Descreva o motivo da reserva" value={form.motivo} onChange={handleChange} required />
                         </div>
 
                         <div className="form-group-reserva">
                             <label>Curso:</label>
-                            <select
-                                name="curso"
-                                value={form.curso}
-                                onChange={handleChange}
-                                required={!form.naoSeAplica}
-                                disabled={form.naoSeAplica}
-                                style={{ backgroundColor: form.naoSeAplica ? "#cfcccc89" : "white" }}
-                            >
+                            <select name="curso" value={form.curso} onChange={handleChange} required={!form.naoSeAplica} disabled={form.naoSeAplica} style={{ backgroundColor: form.naoSeAplica ? "#cfcccc89" : "white" }}>
                                 <option value="">Selecione um curso</option>
                                 <option value="dsm">Desenvolvimento de Software Multiplataforma</option>
                                 <option value="admin">Administração</option>
@@ -425,12 +439,7 @@ export default function SolicitaReserva() {
 
                         <div className="form-group-reserva-check">
                             <p>Caso a reserva não se aplique a um curso, selecione a opção "Não se aplica"</p>
-                            <input
-                                type="checkbox"
-                                name="naoSeAplica"
-                                checked={form.naoSeAplica}
-                                onChange={handleChange}
-                            /> Não se aplica
+                            <input type="checkbox" name="naoSeAplica" checked={form.naoSeAplica} onChange={handleChange} /> Não se aplica
                         </div>
 
                         <button type="submit" className="btn-submit-reserva" disabled={loadingSubmit}>
