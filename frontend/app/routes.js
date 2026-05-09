@@ -23,4 +23,6 @@ export default [
   route("coordenador-solicitacoes", "routes/CoordenadorSolicitacoes.jsx"),
   route("redefinir-senha", "routes/RedefinirSenha.jsx"),
   route("esqueci-senha", "routes/EsqueciSenha.jsx"),
+  route("gerenciar-usuarios", "routes/GerenciarUsuario.jsx"),
+
 ];
