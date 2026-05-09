@@ -253,7 +253,7 @@ export default function SolicitaReserva() {
                             if (view !== "month") return null;
                             const iso = getISOFromDate(d);
                             if (isHolidayDate(iso)) {
-                                return <span title={holidayByDate[iso]?.name} style={{ fontSize: "0.6rem", display: "block", lineHeight: 1 }}>🎉</span>;
+                                return <span title={holidayByDate[iso]?.name} style={{ fontSize: "0.6rem", display: "block", lineHeight: 1 }}></span>;
                             }
                             return null;
                         }}
