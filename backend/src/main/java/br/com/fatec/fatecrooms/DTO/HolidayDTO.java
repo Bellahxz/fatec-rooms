@@ -12,8 +12,6 @@ import java.time.LocalDateTime;
 public class HolidayDTO {
 
     private Integer id;
-    private Integer semesterId;
-    private String semesterName;
     private String name;
     private LocalDate holidayDate;
     private Holiday.Type type;

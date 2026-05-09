@@ -6,7 +6,6 @@ import br.com.fatec.fatecrooms.DTO.NationalHolidayDTO;
 import br.com.fatec.fatecrooms.exception.BusinessException;
 import br.com.fatec.fatecrooms.exception.ResourceNotFoundException;
 import br.com.fatec.fatecrooms.model.Holiday;
-import br.com.fatec.fatecrooms.model.Semester;
 import br.com.fatec.fatecrooms.repository.HolidayRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +24,6 @@ import java.util.List;
 public class HolidayService {
 
     private final HolidayRepository holidayRepository;
-    private final SemesterService semesterService;
 
     private final RestClient restClient = RestClient.create();
     private static final String BRASIL_API_URL =
@@ -35,9 +33,8 @@ public class HolidayService {
     //  CONSULTAS
     // ─────────────────────────────────────────────
 
-    public List<HolidayDTO> listBySemester(Integer semesterId) {
-        semesterService.getOrThrow(semesterId); // valida existência
-        return holidayRepository.findBySemesterIdOrderByHolidayDateAsc(semesterId)
+    public List<HolidayDTO> listAll() {
+        return holidayRepository.findAllByOrderByHolidayDateAsc()
                 .stream().map(this::toDTO).toList();
     }
 
@@ -46,32 +43,11 @@ public class HolidayService {
     }
 
     /**
-     * Consulta os feriados nacionais do ano via BrasilAPI e retorna os que
-     * estão dentro do intervalo do semestre informado.
-     * Não persiste nada — é apenas uma prévia para o coordenador decidir quais importar.
+     * Consulta os feriados nacionais do ano via BrasilAPI.
+     * Não persiste — apenas prévia para o coordenador decidir quais importar.
      */
-    public List<NationalHolidayDTO> previewNationalHolidays(Integer semesterId) {
-        Semester semester = semesterService.getOrThrow(semesterId);
-
-        List<NationalHolidayDTO> result = new ArrayList<>();
-        int startYear = semester.getStartDate().getYear();
-        int endYear   = semester.getEndDate().getYear();
-
-        for (int year = startYear; year <= endYear; year++) {
-            List<NationalHolidayDTO> yearHolidays = fetchNationalHolidays(year);
-            for (NationalHolidayDTO h : yearHolidays) {
-                try {
-                    LocalDate date = LocalDate.parse(h.getDate());
-                    if (!date.isBefore(semester.getStartDate())
-                            && !date.isAfter(semester.getEndDate())) {
-                        result.add(h);
-                    }
-                } catch (Exception e) {
-                    log.warn("Falha ao parsear data de feriado nacional: {}", h.getDate());
-                }
-            }
-        }
-        return result;
+    public List<NationalHolidayDTO> previewNationalHolidays(int year) {
+        return fetchNationalHolidays(year);
     }
 
     // ─────────────────────────────────────────────
@@ -79,12 +55,12 @@ public class HolidayService {
     // ─────────────────────────────────────────────
 
     @Transactional
-    public HolidayDTO create(Integer semesterId, HolidayRequest request) {
-        Semester semester = semesterService.getOrThrow(semesterId);
-        validateHolidayDate(semester, request.getHolidayDate(), null);
+    public HolidayDTO create(HolidayRequest request) {
+        if (holidayRepository.existsByHolidayDate(request.getHolidayDate())) {
+            throw new BusinessException("Já existe um feriado cadastrado para essa data.");
+        }
 
         Holiday holiday = new Holiday();
-        holiday.setSemester(semester);
         holiday.setName(request.getName().trim());
         holiday.setHolidayDate(request.getHolidayDate());
         holiday.setType(request.getType() != null ? request.getType() : Holiday.Type.CUSTOM);
@@ -94,15 +70,13 @@ public class HolidayService {
     }
 
     /**
-     * Importa em lote os feriados nacionais de um semestre consultando a BrasilAPI.
+     * Importa em lote os feriados nacionais de um ano consultando a BrasilAPI.
      * Ignora datas já cadastradas silenciosamente.
      * Retorna a lista dos que foram efetivamente inseridos.
      */
     @Transactional
-    public List<HolidayDTO> importNationalHolidays(Integer semesterId) {
-        Semester semester = semesterService.getOrThrow(semesterId);
-
-        List<NationalHolidayDTO> national = previewNationalHolidays(semesterId);
+    public List<HolidayDTO> importNationalHolidays(int year) {
+        List<NationalHolidayDTO> national = fetchNationalHolidays(year);
         List<HolidayDTO> imported = new ArrayList<>();
 
         for (NationalHolidayDTO nh : national) {
@@ -113,13 +87,11 @@ public class HolidayService {
                 continue;
             }
 
-            // Pula se já existir feriado nessa data neste semestre
-            if (holidayRepository.existsBySemesterIdAndHolidayDate(semesterId, date)) {
+            if (holidayRepository.existsByHolidayDate(date)) {
                 continue;
             }
 
             Holiday holiday = new Holiday();
-            holiday.setSemester(semester);
             holiday.setName(nh.getName());
             holiday.setHolidayDate(date);
             holiday.setType(Holiday.Type.NATIONAL);
@@ -134,7 +106,12 @@ public class HolidayService {
     @Transactional
     public HolidayDTO update(Integer id, HolidayRequest request) {
         Holiday holiday = getOrThrow(id);
-        validateHolidayDate(holiday.getSemester(), request.getHolidayDate(), id);
+
+        // Verifica duplicidade apenas se a data mudou
+        if (!holiday.getHolidayDate().equals(request.getHolidayDate())
+                && holidayRepository.existsByHolidayDate(request.getHolidayDate())) {
+            throw new BusinessException("Já existe um feriado cadastrado para essa data.");
+        }
 
         holiday.setName(request.getName().trim());
         holiday.setHolidayDate(request.getHolidayDate());
@@ -154,34 +131,6 @@ public class HolidayService {
     // ─────────────────────────────────────────────
     //  HELPERS INTERNOS
     // ─────────────────────────────────────────────
-
-    /**
-     * Verifica se a data do feriado está dentro do semestre e
-     * se não há duplicidade (ignorando o próprio registro ao editar).
-     */
-    private void validateHolidayDate(Semester semester, LocalDate date, Integer excludeId) {
-        if (date.isBefore(semester.getStartDate()) || date.isAfter(semester.getEndDate())) {
-            throw new BusinessException(
-                    "A data do feriado deve estar dentro do período do semestre ("
-                    + semester.getStartDate() + " a " + semester.getEndDate() + ")."
-            );
-        }
-
-        boolean exists = holidayRepository.existsBySemesterIdAndHolidayDate(semester.getId(), date);
-        // Se excluindo um ID (edição), precisamos verificar se a colisão é com OUTRO registro
-        if (exists && excludeId != null) {
-            Holiday existing = holidayRepository.findBySemesterIdOrderByHolidayDateAsc(semester.getId())
-                    .stream()
-                    .filter(h -> h.getHolidayDate().equals(date))
-                    .findFirst()
-                    .orElse(null);
-            if (existing != null && !existing.getId().equals(excludeId)) {
-                throw new BusinessException("Já existe um feriado cadastrado para essa data neste semestre.");
-            }
-        } else if (exists) {
-            throw new BusinessException("Já existe um feriado cadastrado para essa data neste semestre.");
-        }
-    }
 
     private List<NationalHolidayDTO> fetchNationalHolidays(int year) {
         try {
@@ -203,8 +152,6 @@ public class HolidayService {
     public HolidayDTO toDTO(Holiday h) {
         return new HolidayDTO(
                 h.getId(),
-                h.getSemester().getId(),
-                h.getSemester().getName(),
                 h.getName(),
                 h.getHolidayDate(),
                 h.getType(),

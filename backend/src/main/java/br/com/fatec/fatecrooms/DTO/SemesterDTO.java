@@ -5,7 +5,6 @@ import lombok.Getter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Getter
 @AllArgsConstructor
@@ -19,7 +18,5 @@ public class SemesterDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // Resumo de quantidade — evita trafegar listas inteiras no listing
-    private Integer holidayCount;
     private Integer examWeekCount;
 }

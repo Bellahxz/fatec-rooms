@@ -22,14 +22,10 @@ public class Holiday {
     @Column(name = "holiday_id", columnDefinition = "int UNSIGNED not null")
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "semester_id", nullable = false)
-    private Semester semester;
-
     @Column(name = "name", nullable = false, length = 150)
     private String name;
 
-    @Column(name = "holiday_date", nullable = false)
+    @Column(name = "holiday_date", nullable = false, unique = true)
     private LocalDate holidayDate;
 
     @Enumerated(EnumType.STRING)

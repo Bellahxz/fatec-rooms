@@ -121,7 +121,6 @@ public class SemesterService {
                 s.getActive(),
                 s.getCreatedAt(),
                 s.getUpdatedAt(),
-                s.getHolidays().size(),
                 s.getExamWeeks().size()
         );
     }

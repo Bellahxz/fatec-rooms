@@ -14,90 +14,82 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/semesters/{semesterId}/holidays")
+@RequestMapping("/api/holidays")
 @RequiredArgsConstructor
 public class HolidayController {
 
     private final HolidayService holidayService;
 
     /**
-     * GET /api/semesters/{semesterId}/holidays
-     * Lista todos os feriados de um semestre — qualquer usuário autenticado.
+     * GET /api/holidays
+     * Lista todos os feriados — qualquer usuário autenticado.
      */
     @GetMapping
-    public ResponseEntity<List<HolidayDTO>> listBySemester(@PathVariable Integer semesterId) {
-        return ResponseEntity.ok(holidayService.listBySemester(semesterId));
+    public ResponseEntity<List<HolidayDTO>> listAll() {
+        return ResponseEntity.ok(holidayService.listAll());
     }
 
     /**
-     * GET /api/semesters/{semesterId}/holidays/{id}
+     * GET /api/holidays/{id}
      * Detalhe de um feriado específico.
      */
     @GetMapping("/{id}")
-    public ResponseEntity<HolidayDTO> findById(
-            @PathVariable Integer semesterId,
-            @PathVariable Integer id) {
+    public ResponseEntity<HolidayDTO> findById(@PathVariable Integer id) {
         return ResponseEntity.ok(holidayService.findById(id));
     }
 
     /**
-     * GET /api/semesters/{semesterId}/holidays/national/preview
-     * Consulta os feriados nacionais disponíveis para o semestre via BrasilAPI.
+     * GET /api/holidays/national/preview?year=2026
+     * Consulta os feriados nacionais disponíveis via BrasilAPI.
      * Não persiste — apenas prévia para o coordenador.
      */
     @GetMapping("/national/preview")
     @PreAuthorize("hasRole('COORDINATOR')")
-    public ResponseEntity<List<NationalHolidayDTO>> previewNational(@PathVariable Integer semesterId) {
-        return ResponseEntity.ok(holidayService.previewNationalHolidays(semesterId));
+    public ResponseEntity<List<NationalHolidayDTO>> previewNational(
+            @RequestParam int year) {
+        return ResponseEntity.ok(holidayService.previewNationalHolidays(year));
     }
 
     /**
-     * POST /api/semesters/{semesterId}/holidays/national/import
-     * Importa todos os feriados nacionais do semestre via BrasilAPI.
+     * POST /api/holidays/national/import?year=2026
+     * Importa todos os feriados nacionais do ano via BrasilAPI.
      * Ignora datas já cadastradas.
      */
     @PostMapping("/national/import")
     @PreAuthorize("hasRole('COORDINATOR')")
-    public ResponseEntity<List<HolidayDTO>> importNational(@PathVariable Integer semesterId) {
-        return ResponseEntity.ok(holidayService.importNationalHolidays(semesterId));
+    public ResponseEntity<List<HolidayDTO>> importNational(@RequestParam int year) {
+        return ResponseEntity.ok(holidayService.importNationalHolidays(year));
     }
 
     /**
-     * POST /api/semesters/{semesterId}/holidays
-     * Cria um feriado personalizado no semestre — coordenador.
-     * Pode ser usado para feriados municipais, aniversário da instituição,
-     * emendas de feriado, recessos, etc.
+     * POST /api/holidays
+     * Cria um feriado — coordenador.
      */
     @PostMapping
     @PreAuthorize("hasRole('COORDINATOR')")
-    public ResponseEntity<HolidayDTO> create(
-            @PathVariable Integer semesterId,
-            @Valid @RequestBody HolidayRequest request) {
-        return ResponseEntity.ok(holidayService.create(semesterId, request));
+    public ResponseEntity<HolidayDTO> create(@Valid @RequestBody HolidayRequest request) {
+        return ResponseEntity.ok(holidayService.create(request));
     }
 
     /**
-     * PUT /api/semesters/{semesterId}/holidays/{id}
+     * PUT /api/holidays/{id}
      * Atualiza um feriado — coordenador.
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('COORDINATOR')")
     public ResponseEntity<HolidayDTO> update(
-            @PathVariable Integer semesterId,
             @PathVariable Integer id,
             @Valid @RequestBody HolidayRequest request) {
         return ResponseEntity.ok(holidayService.update(id, request));
     }
 
     /**
-     * DELETE /api/semesters/{semesterId}/holidays/{id}
+     * DELETE /api/holidays/{id}
      * Remove um feriado — coordenador.
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('COORDINATOR')")
-    public ResponseEntity<Map<String, String>> delete(
-            @PathVariable Integer semesterId,
-            @PathVariable Integer id) {
+    public ResponseEntity<Map<String, String>> delete(@PathVariable Integer id) {
         String message = holidayService.delete(id);
         return ResponseEntity.ok(Map.of("message", message));
     }

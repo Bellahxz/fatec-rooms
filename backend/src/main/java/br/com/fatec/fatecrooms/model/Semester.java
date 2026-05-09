@@ -39,9 +39,6 @@ public class Semester {
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "semester", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Holiday> holidays = new ArrayList<>();
-
-    @OneToMany(mappedBy = "semester", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ExamWeek> examWeeks = new ArrayList<>();
 
     @PrePersist
