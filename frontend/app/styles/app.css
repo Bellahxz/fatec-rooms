@@ -4595,7 +4595,7 @@ button {
     }
   }
 }
-.calendar-holiday { background: #fed7aa !important; color: #9a3412 !important; }
-.legend-holiday { background: #fb923c; }
-.dia-feriado { background: #fed7aa !important; color: #9a3412 !important; pointer-events: none; opacity: 0.7; }
-.box.laranja { background: #fb923c; }
+.calendar-holiday { background: #880cc2 !important; color: #ffffff !important; }
+.legend-holiday { background: #880cc2; }
+.dia-feriado { background: #880cc2 !important; color: #ffffff !important; pointer-events: none;  }
+.box.laranja { background: #880cc2; }

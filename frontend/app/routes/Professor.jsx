@@ -386,7 +386,7 @@ export default function Professor() {
         >
           {tooltipData.holiday && (
             <div style={{ marginBottom: tooltipData.bookings.length > 0 ? "8px" : 0, padding: "4px 0", borderBottom: tooltipData.bookings.length > 0 ? "1px solid #eee" : "none" }}>
-              <div style={{ fontWeight: 700, color: "#c2410c", fontSize: "0.85rem" }}>🎉 Feriado</div>
+              <div style={{ fontWeight: 700, color: "#880cc2", fontSize: "0.85rem" }}>🎉 Feriado</div>
               <div style={{ fontSize: "0.9rem" }}>{tooltipData.holiday.name}</div>
               {tooltipData.holiday.description && (
                 <div style={{ fontSize: "0.8rem", color: "#888" }}>{tooltipData.holiday.description}</div>

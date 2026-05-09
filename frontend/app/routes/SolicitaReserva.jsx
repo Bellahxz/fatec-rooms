@@ -22,13 +22,7 @@ export default function SolicitaReserva() {
     const [success, setSuccess] = useState(null);
 
     const [form, setForm] = useState({
-        data: "",
-        dataISO: "",
-        espaco: "",
-        roomId: null,
-        motivo: "",
-        curso: "",
-        naoSeAplica: false,
+        data: "", dataISO: "", espaco: "", roomId: null, motivo: "", curso: "", naoSeAplica: false,
     });
     const [selectedPeriodIds, setSelectedPeriodIds] = useState([]);
     const [periodDropdownOpen, setPeriodDropdownOpen] = useState(false);
@@ -41,21 +35,18 @@ export default function SolicitaReserva() {
             try {
                 setLoadingPage(true);
                 setError(null);
-
                 const [roomsRes, bookingsRes, holidaysRes] = await Promise.all([
                     fetch("/api/rooms", { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }),
                     fetch("/api/bookings/my", { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }),
                     fetch("/api/holidays", { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } }),
                 ]);
-
                 if (!roomsRes.ok) throw new Error("Falha ao carregar salas.");
                 if (!bookingsRes.ok) throw new Error("Falha ao carregar suas reservas.");
-
                 setSalas(await roomsRes.json() || []);
                 setMyBookings(await bookingsRes.json() || []);
                 if (holidaysRes.ok) {
-                    const holidaysData = await holidaysRes.json();
-                    setHolidays(Array.isArray(holidaysData) ? holidaysData : []);
+                    const data = await holidaysRes.json();
+                    setHolidays(Array.isArray(data) ? data : []);
                 }
             } catch (err) {
                 setError(err.message || "Erro ao carregar a página.");
@@ -89,14 +80,11 @@ export default function SolicitaReserva() {
         }
     }
 
-    // Set de datas de feriado para lookup rápido
     const holidayDateSet = new Set(holidays.map((h) => h.holidayDate));
     const holidayByDate = {};
     holidays.forEach((h) => { holidayByDate[h.holidayDate] = h; });
 
-    function isHolidayDate(isoDate) {
-        return holidayDateSet.has(isoDate);
-    }
+    function isHolidayDate(iso) { return holidayDateSet.has(iso); }
 
     function getISOFromDate(d) {
         const y = d.getFullYear();
@@ -138,10 +126,8 @@ export default function SolicitaReserva() {
         const minDaysMatch = errorText.match(/mínimo\s+(\d+)\s+dia/i);
         const earliestMatch = errorText.match(/(\d{4}-\d{2}-\d{2})/);
         if (minDaysMatch && earliestMatch) {
-            const minAdvanceDays = minDaysMatch[1];
             const [year, month, day] = earliestMatch[1].split("-");
-            const earliestAllowed = `${day}/${month}/${year}`;
-            return `A reserva deve ser feita com no mínimo ${minAdvanceDays} dia(s) de antecedência. Data mais próxima permitida: ${earliestAllowed}.`;
+            return `A reserva deve ser feita com no mínimo ${minDaysMatch[1]} dia(s) de antecedência. Data mais próxima permitida: ${day}/${month}/${year}.`;
         }
         return null;
     }
@@ -155,8 +141,6 @@ export default function SolicitaReserva() {
             setError("Preencha a data, sala, ao menos um período e o motivo.");
             return;
         }
-
-        // Bloquear se for feriado
         if (isHolidayDate(form.dataISO)) {
             const h = holidayByDate[form.dataISO];
             setError(`Não é possível reservar em feriados. "${h?.name || "Feriado"}" — ${form.data}.`);
@@ -182,29 +166,21 @@ export default function SolicitaReserva() {
                 headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
                 body: JSON.stringify(body),
             });
-
             if (!res.ok) {
                 const errorText = await res.text();
-                const friendlyMessage = parseBackendError(errorText);
-                throw new Error(friendlyMessage || errorText || "Falha ao solicitar a reserva.");
+                throw new Error(parseBackendError(errorText) || errorText || "Falha ao solicitar a reserva.");
             }
-
             const totalPeriods = selectedPeriodIds.length;
-            setSuccess(
-                totalPeriods === 1
-                    ? "Reserva solicitada com sucesso. Aguarde aprovação."
-                    : `Reserva com ${totalPeriods} períodos solicitada com sucesso. Aguarde aprovação.`
+            setSuccess(totalPeriods === 1
+                ? "Reserva solicitada com sucesso. Aguarde aprovação."
+                : `Reserva com ${totalPeriods} períodos solicitada com sucesso. Aguarde aprovação.`
             );
-
             setSelectedRoom(null);
             setAvailability(null);
             setSelectedPeriodIds([]);
             setPeriodDropdownOpen(false);
             setForm(prev => ({ ...prev, espaco: "", roomId: null, motivo: "", curso: "", naoSeAplica: false }));
-
-            const updatedRes = await fetch("/api/bookings/my", {
-                headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-            });
+            const updatedRes = await fetch("/api/bookings/my", { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } });
             if (updatedRes.ok) setMyBookings(await updatedRes.json() || []);
         } catch (err) {
             setError(err.message || "Erro ao enviar a solicitação.");
@@ -215,21 +191,18 @@ export default function SolicitaReserva() {
 
     const availablePeriods = availability?.periods?.filter(p => p.available) || [];
 
-    if (loadingPage) {
-        return (
-            <>
-                <Navbar activePage="SolicitaReserva" />
-                <PageHero variant="SolicitaReserva" tag="Painel Operacional" title="Solicitação de Reserva" description="Carregando..." />
-                <div className="content-solicitarReserva"><div className="form-title">Carregando informações...</div></div>
-                <Footer />
-            </>
-        );
-    }
+    if (loadingPage) return (
+        <>
+            <Navbar activePage="SolicitaReserva" />
+            <PageHero variant="SolicitaReserva" tag="Painel Operacional" title="Solicitação de Reserva" description="Carregando..." />
+            <div className="content-solicitarReserva"><div className="form-title">Carregando informações...</div></div>
+            <Footer />
+        </>
+    );
 
     return (
         <>
             <Navbar activePage="SolicitaReserva" />
-
             <PageHero
                 variant="SolicitaReserva"
                 tag="Painel Operacional"
@@ -238,7 +211,6 @@ export default function SolicitaReserva() {
             />
 
             <div className="content-solicitarReserva">
-                {/* ── Calendário ── */}
                 <div className="div-calendario">
                     <div className="title-calendario">
                         <h3>Minhas Reservas:</h3>
@@ -248,14 +220,10 @@ export default function SolicitaReserva() {
                     <Calendar
                         onChange={value => {
                             const isoDate = getISOFromDate(value);
-
-                            // Bloquear feriados
                             if (isHolidayDate(isoDate)) {
-                                const h = holidayByDate[isoDate];
-                                setError(`Este dia é feriado: "${h?.name || "Feriado"}". Selecione outra data.`);
+                                setError(`Este dia é feriado: "${holidayByDate[isoDate]?.name || "Feriado"}". Selecione outra data.`);
                                 return;
                             }
-
                             setError(null);
                             setDate(value);
                             setForm(prev => ({ ...prev, data: value.toLocaleDateString("pt-BR"), dataISO: isoDate }));
@@ -266,11 +234,12 @@ export default function SolicitaReserva() {
                             setModalOpen(true);
                         }}
                         value={date}
-                        tileDisabled={({ date: d }) => {
-                            const iso = getISOFromDate(d);
-                            return isHolidayDate(iso);
+                        tileDisabled={({ date: d, view }) => {
+                            if (view !== "month") return false;
+                            return isHolidayDate(getISOFromDate(d));
                         }}
-                        tileClassName={({ date: d }) => {
+                        tileClassName={({ date: d, view }) => {
+                            if (view !== "month") return null;
                             const iso = getISOFromDate(d);
                             if (isHolidayDate(iso)) return "dia-feriado";
                             if (iso === form.dataISO) return "dia-selecionado";
@@ -280,7 +249,8 @@ export default function SolicitaReserva() {
                             if (st === "CANCELLED") return "dia-cancelada";
                             return null;
                         }}
-                        tileContent={({ date: d }) => {
+                        tileContent={({ date: d, view }) => {
+                            if (view !== "month") return null;
                             const iso = getISOFromDate(d);
                             if (isHolidayDate(iso)) {
                                 return <span title={holidayByDate[iso]?.name} style={{ fontSize: "0.6rem", display: "block", lineHeight: 1 }}>🎉</span>;
@@ -309,12 +279,10 @@ export default function SolicitaReserva() {
                                 const periods = booking.periods || [];
                                 const first = periods[0];
                                 const last = periods[periods.length - 1];
-                                const horaInicio = first?.periodStart?.slice(0, 5) || "--:--";
-                                const horaFim = last?.periodEnd?.slice(0, 5) || "--:--";
                                 return (
                                     <p key={booking.id}>
                                         <span className="hora">
-                                            {booking.bookingDate} • {horaInicio} - {horaFim}
+                                            {booking.bookingDate} • {first?.periodStart?.slice(0, 5) || "--:--"} - {last?.periodEnd?.slice(0, 5) || "--:--"}
                                             {periods.length > 1 && ` (${periods.length} períodos)`}
                                         </span>
                                         <span className="prof">{booking.roomName}</span>
@@ -325,7 +293,6 @@ export default function SolicitaReserva() {
                     </div>
                 </div>
 
-                {/* ── Modal de salas ── */}
                 {modalOpen && (
                     <div className="modal-overlay" onClick={() => setModalOpen(false)}>
                         <div className="modal-espacos" onClick={e => e.stopPropagation()}>
@@ -348,7 +315,6 @@ export default function SolicitaReserva() {
                     </div>
                 )}
 
-                {/* ── Formulário ── */}
                 <div className="div-forms-reserva">
                     <form onSubmit={handleSubmit}>
                         {error && <div className="form-title" style={{ color: "#b91c1c" }}>{error}</div>}
@@ -380,11 +346,7 @@ export default function SolicitaReserva() {
                                 {periodDropdownOpen && (
                                     <div className="period-dropdown-options">
                                         {availablePeriods.length === 0 ? (
-                                            <small>
-                                                {selectedRoom
-                                                    ? "Nenhum período disponível para essa sala nesta data."
-                                                    : "Selecione uma sala para ver os períodos disponíveis."}
-                                            </small>
+                                            <small>{selectedRoom ? "Nenhum período disponível para essa sala nesta data." : "Selecione uma sala para ver os períodos disponíveis."}</small>
                                         ) : (
                                             <>
                                                 <div style={{ marginBottom: 8, display: "flex", gap: 8 }}>
