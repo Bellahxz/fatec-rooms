@@ -24,7 +24,7 @@ const menuActions = [
     to: "/confirmar",
   },
   {
-    icon: <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M11 20H7a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v10" stroke="red-dark" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+    icon: <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M11 20H7a2 2 0 01-2-2V5a2 2 0 012-2h10a2 2 0 012 2v10" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>,
     title: "Solicitações de Reserva",
     desc: "Aprove ou rejeite solicitações",
     to: "/coordenador-solicitacoes",
@@ -34,7 +34,6 @@ const menuActions = [
     title: "Todas as Reservas",
     desc: "Visualize todas as reservas",
     to: "/todas-reservas",
-    
   },
   {
     icon: <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>,
@@ -57,7 +56,6 @@ const statusClasses = {
   CANCELLED: "status-cancel",
   REJECTED: "status-cancel",
 };
-
 
 function formatDate(isoDate) {
   if (!isoDate) return "";
@@ -192,90 +190,122 @@ export default function Coordenador() {
         description="Gerencie salas, professores e reservas."
       />
 
-      {/* Estatísticas */}
-      <div className="stats-row">
-        {stats.map((s) => (
-          <div key={s.label} className={`stat-card ${s.highlight ? "highlight" : ""}`}>
-            <div className="stat-icon">{s.icon}</div>
-            <div className="stat-number">{s.number}</div>
-            <div className="stat-label">{s.label}</div>
-          </div>
-        ))}
-      </div>
+      <main className="content dashboard-page">
+        <div className="dashboard-top-grid">
 
-      {/* Alerta */}
-      <div className="alert-card">
-        <div className="alert-icon">
-          <svg viewBox="0 0 24 24">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-            <line x1="12" y1="9" x2="12" y2="13" />
-            <line x1="12" y1="17" x2="12.01" y2="17" />
-          </svg>
-        </div>
-        <div className="alert-text">
-          <h4>{pendingBookings.length} reservas aguardando aprovação</h4>
-          <p>Professores estão aguardando sua confirmação para hoje.</p>
-        </div>
-      </div>
+          {/* Coluna principal */}
+          <div>
+            {/* Estatísticas */}
+            <div className="stats-row">
+              {stats.map((s) => (
+                <div key={s.label} className={`stat-card ${s.highlight ? "highlight" : ""}`}>
+                  <div className="stat-icon">{s.icon}</div>
+                  <div className="stat-number">{s.number}</div>
+                  <div className="stat-label">{s.label}</div>
+                </div>
+              ))}
+            </div>
+                  {/* alerta de reservas pendentes */}
+                    {pendingBookings.length > 0 && (
+            <div className="alert-card">
+              <div className="alert-icon">
+                <svg viewBox="0 0 24 24">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </div>
+              <div className="alert-text">
+                <h4>{pendingBookings.length} reservas aguardando aprovação</h4>
+                <p>Professores estão aguardando sua confirmação para hoje.</p>
+              </div>
+            </div>
+          )}
 
-      {/* Menu de ações */}
-      <div className="section-title">Ações rápidas</div>
-      <div className="menu-grid">
-        {menuActions.map((action) => (
-          <Link
-            key={action.title}
-            className="menu-card"
-            to={action.to}
-          >
-            <div className="menu-icon">{action.icon}</div>
-            <h3>{action.title}</h3>
-            <p>{action.desc}</p>
-          </Link>
-        ))}
-      </div>
+            {/* Menu de ações */}
+            <div className="section-title">Ações rápidas</div>
+            <div className="menu-grid">
+              {menuActions.map((action) => (
+                <Link key={action.title} className="menu-card" to={action.to}>
+                  <div className="menu-icon">{action.icon}</div>
+                  <h3>{action.title}</h3>
+                  <p>{action.desc}</p>
+                </Link>
+              ))}
+            </div>
 
-      {/* Reservas recentes */}
-      <div className="section-title">
-        Reservas recentes
-        <Link className="see-all" to="/confirmar">Ver todas</Link>
-      </div>
+            {/* Reservas recentes */}
+            <div className="section-title section-title--top-space">
+              Reservas recentes
+              <Link className="see-all" to="/todas-reservas">Ver todas</Link>
+            </div>
 
-      <div className="reservas-list">
-        {recentBookings.length === 0 ? (
-          <div className="reserva-item">
-            <div className="reserva-info">
-              <div className="reserva-sala">Nenhuma reserva recente encontrada.</div>
+            <div className="reservas-list">
+              {recentBookings.length === 0 ? (
+                <div className="reserva-item">
+                  <div className="reserva-info">
+                    <div className="reserva-sala">Nenhuma reserva recente encontrada.</div>
+                  </div>
+                </div>
+              ) : (
+                recentBookings.map((booking) => (
+                  <div key={booking.id} className="reserva-item">
+                    <div className={`reserva-dot ${statusClasses[booking.status] || "dot-green"}`} />
+                    <div className="reserva-info">
+                      <div className="reserva-sala">{booking.roomName} — {booking.roomLocation}</div>
+                      <div className="reserva-prof">{booking.userDisplayName || booking.username}</div>
+                    </div>
+                    <div className="reserva-time">
+                      {formatDate(booking.bookingDate)}<br />
+                      {booking.periods && booking.periods.length > 0 ? (
+                        <>
+                          {formatTime(booking.periods[0].periodStart)}–{formatTime(booking.periods[booking.periods.length - 1].periodEnd)}
+                        </>
+                      ) : (
+                        "--:-- – --:--"
+                      )}
+                      <div className={`reserva-status ${statusClasses[booking.status] || "status-ok"}`}>
+                        {statusLabels[booking.status] || booking.status}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
-        ) : (
-          recentBookings.map((booking) => (
-            <div key={booking.id} className="reserva-item">
-              <div className={`reserva-dot ${statusClasses[booking.status] || "dot-green"}`} />
-              <div className="reserva-info">
-                <div className="reserva-sala">{booking.roomName} — {booking.roomLocation}</div>
-                <div className="reserva-prof">{booking.userDisplayName || booking.username}</div>
-              </div>
-              <div className="reserva-time">
-                {formatDate(booking.bookingDate)}<br />
-                {booking.periods && booking.periods.length > 0 ? (
-                  <>
-                    {formatTime(booking.periods[0].periodStart)}–{formatTime(booking.periods[booking.periods.length - 1].periodEnd)}
-                  </>
-                ) : (
-                  "--:-- – --:--"
-                )}
-                <div className={`reserva-status ${statusClasses[booking.status] || "status-ok"}`}>
-                  {statusLabels[booking.status] || booking.status}
+
+          {/* Sidebar */}
+          <aside className="dashboard-sidebar">
+            <div className="dashboard-panel summary-card">
+              <h3>Resumo rápido</h3>
+              <div className="summary-grid">
+                <div>
+                  <span>Salas ativas</span>
+                  <strong>{rooms.length}</strong>
+                </div>
+                <div>
+                  <span>Reservas hoje</span>
+                  <strong>{todayBookings.length}</strong>
+                </div>
+                <div>
+                  <span>Professores cadastrados</span>
+                  <strong>{professors.length}</strong>
+                </div>
+                <div>
+                  <span>Reservas pendentes</span>
+                  <strong>{pendingBookings.length}</strong>
                 </div>
               </div>
             </div>
-          ))
-        )}
-      </div>
+
+
+          </aside>
+
+        </div>
+      </main>
 
       <div className="spacer" />
       <Footer />
-
     </>
   );
 }

@@ -225,6 +225,7 @@ export default function CoordenadorSolicitacoes() {
                 </div>
 
                 <div className="acoes">
+                  
                   <button
                     className="btn-aprovar"
                     onClick={() => aprovarReserva(reserva.id)}
