@@ -18,11 +18,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BookingService {
 
-    private final BookingRepository    bookingRepository;
-    private final RoomRepository       roomRepository;
-    private final UserRepository       userRepository;
-    private final PeriodRepository     periodRepository;
-    private final SystemConfigService  configService;   // ← novo
+    private final BookingRepository               bookingRepository;
+    private final RoomRepository                  roomRepository;
+    private final UserRepository                  userRepository;
+    private final PeriodRepository                periodRepository;
+    private final SystemConfigService             configService;
+    private final RecurringBookingRepository      recurringBookingRepository; // ← NOVO
 
     // ─────────────────────────────────────────────
     //  CONSULTAS ABERTAS
@@ -32,6 +33,12 @@ public class BookingService {
         Room room = getRoomOrThrow(roomId);
 
         List<Integer> occupied = bookingRepository.findOccupiedPeriodIds(roomId, date);
+
+        // Inclui períodos ocupados por reservas recorrentes
+        List<Integer> recurringOccupied = recurringBookingRepository
+                .findOccupiedPeriodsByRecurring(roomId, date)
+                .stream().map(Period::getId).toList();
+
         DayOfWeek dayOfWeek = date.getDayOfWeek();
 
         List<Period> periods = periodRepository.findByActiveOrderByStartTime((byte) 1)
@@ -47,7 +54,7 @@ public class BookingService {
         List<AvailabilityDTO.PeriodAvailabilityDTO> slots = periods.stream()
                 .map(p -> new AvailabilityDTO.PeriodAvailabilityDTO(
                         p.getId(), p.getName(), p.getStartTime(), p.getEndTime(),
-                        !occupied.contains(p.getId())
+                        !occupied.contains(p.getId()) && !recurringOccupied.contains(p.getId())
                 ))
                 .toList();
 
@@ -73,12 +80,10 @@ public class BookingService {
             throw new IllegalStateException("Sala não está disponível para reservas.");
         }
 
-        // ── Validação 1: data futura ──────────────────────────────────────────
         if (!request.getBookingDate().isAfter(LocalDate.now())) {
             throw new IllegalArgumentException("A data da reserva deve ser futura.");
         }
 
-        // ── Validação 2: prazo mínimo de antecedência (configurável) ──────────
         int minAdvanceDays = configService.getMinAdvanceDays();
         if (minAdvanceDays > 0) {
             LocalDate earliestAllowed = LocalDate.now().plusDays(minAdvanceDays);
@@ -86,18 +91,15 @@ public class BookingService {
                 throw new IllegalArgumentException(
                         "A reserva deve ser feita com no mínimo " + minAdvanceDays
                                 + " dia(s) de antecedência. Data mais próxima permitida: "
-                                + earliestAllowed + "."
-                );
+                                + earliestAllowed + ".");
             }
         }
 
-        // ── Validação 3: domingo não aceita reservas ──────────────────────────
         DayOfWeek bookingDay = request.getBookingDate().getDayOfWeek();
         if (bookingDay == DayOfWeek.SUNDAY) {
             throw new IllegalArgumentException("Domingo não aceita reservas.");
         }
 
-        // ── Busca e valida todos os períodos solicitados ───────────────────────
         List<Period> selectedPeriods = request.getPeriodIds().stream()
                 .map(this::getPeriodOrThrow)
                 .toList();
@@ -115,18 +117,17 @@ public class BookingService {
             }
         }
 
-        // ── Validação 4: conflito de ID (reserva existente ocupa exatamente esse período) ──
         List<Integer> periodIds = selectedPeriods.stream().map(Period::getId).toList();
+
         if (bookingRepository.existsConflict(room.getId(), periodIds, request.getBookingDate(), null)) {
             throw new IllegalStateException(
-                    "Um ou mais períodos já estão reservados para essa sala nessa data."
-            );
+                    "Um ou mais períodos já estão reservados para essa sala nessa data.");
         }
 
-        // ── Validação 5: conflito de sobreposição de horário ──────────────────
-        // Garante que, mesmo que no futuro existam períodos com horários que se
-        // cruzam (ex.: 10:30-11:30 e 11:20-12:00), a reserva seja bloqueada.
         validateNoTimeOverlap(room.getId(), request.getBookingDate(), selectedPeriods, null);
+
+        // ── Validação extra: conflito com reservas recorrentes ────────────────
+        validateNoRecurringConflict(room.getId(), request.getBookingDate(), selectedPeriods);
 
         Booking booking = new Booking();
         booking.setRoom(room);
@@ -211,8 +212,7 @@ public class BookingService {
 
         if (booking.getStatus() != Status.PENDING) {
             throw new IllegalStateException(
-                    "Apenas reservas PENDENTES podem ser revisadas. Status atual: " + booking.getStatus()
-            );
+                    "Apenas reservas PENDENTES podem ser revisadas. Status atual: " + booking.getStatus());
         }
         if (!request.isApproved() && (request.getRejectReason() == null || request.getRejectReason().isBlank())) {
             throw new IllegalArgumentException("Informe o motivo da rejeição.");
@@ -253,38 +253,16 @@ public class BookingService {
     }
 
     // ─────────────────────────────────────────────
-    //  VALIDAÇÃO DE SOBREPOSIÇÃO DE HORÁRIO
+    //  VALIDAÇÕES PRIVADAS
     // ─────────────────────────────────────────────
 
-    /**
-     * Verifica se algum dos períodos solicitados se sobrepõe no tempo a qualquer
-     * período já reservado (PENDING ou APPROVED) para a mesma sala/data.
-     *
-     * A sobreposição ocorre quando dois intervalos [A, B) e [C, D) satisfazem:
-     *     A < D  &&  C < B
-     *
-     * Isso captura casos futuros onde dois períodos cadastrados possuem horários
-     * que se cruzam (ex.: 10:30-11:30 e 11:20-12:00).
-     *
-     * @param roomId          ID da sala
-     * @param date            data da reserva
-     * @param selectedPeriods períodos que o usuário quer reservar
-     * @param excludeBookingId ID da reserva a ignorar (útil em edições; null = nenhuma)
-     */
-    private void validateNoTimeOverlap(
-            Integer roomId,
-            LocalDate date,
-            List<Period> selectedPeriods,
-            Integer excludeBookingId
-    ) {
-        // Períodos já ocupados na sala/data (apenas PENDING e APPROVED)
+    private void validateNoTimeOverlap(Integer roomId, LocalDate date,
+                                       List<Period> selectedPeriods, Integer excludeBookingId) {
         List<Period> occupiedPeriods =
                 bookingRepository.findOccupiedPeriodsWithTimes(roomId, date, excludeBookingId);
 
         for (Period requested : selectedPeriods) {
             for (Period occupied : occupiedPeriods) {
-                // Se o ID é exatamente o mesmo, já foi capturado pela validação de conflito exato
-                // (existsConflict). Checamos aqui apenas sobreposições de horário entre IDs distintos.
                 if (requested.getId().equals(occupied.getId())) continue;
 
                 boolean overlaps =
@@ -297,8 +275,36 @@ public class BookingService {
                                     + "' (" + requested.getStartTime() + "–" + requested.getEndTime()
                                     + ") conflita com um período já reservado"
                                     + " (" + occupied.getStartTime() + "–" + occupied.getEndTime()
-                                    + ") nesta sala e data."
-                    );
+                                    + ") nesta sala e data.");
+                }
+            }
+        }
+    }
+
+    private void validateNoRecurringConflict(Integer roomId, LocalDate date,
+                                             List<Period> selectedPeriods) {
+        List<Period> recurringOccupied =
+                recurringBookingRepository.findOccupiedPeriodsByRecurring(roomId, date);
+
+        for (Period requested : selectedPeriods) {
+            for (Period occupied : recurringOccupied) {
+                if (requested.getId().equals(occupied.getId())) {
+                    throw new IllegalStateException(
+                            "O período '" + requested.getName()
+                                    + "' já está ocupado por uma reserva recorrente nesta data.");
+                }
+
+                boolean overlaps =
+                        requested.getStartTime().isBefore(occupied.getEndTime()) &&
+                                occupied.getStartTime().isBefore(requested.getEndTime());
+
+                if (overlaps) {
+                    throw new IllegalStateException(
+                            "O período '" + requested.getName()
+                                    + "' (" + requested.getStartTime() + "–" + requested.getEndTime()
+                                    + ") conflita com uma reserva recorrente"
+                                    + " (" + occupied.getStartTime() + "–" + occupied.getEndTime()
+                                    + ") nesta sala e data.");
                 }
             }
         }
@@ -337,8 +343,7 @@ public class BookingService {
         List<BookingDTO.PeriodSummary> periodSummaries = b.getPeriods().stream()
                 .sorted((a, c) -> a.getStartTime().compareTo(c.getStartTime()))
                 .map(p -> new BookingDTO.PeriodSummary(
-                        p.getId(), p.getName(), p.getStartTime(), p.getEndTime()
-                ))
+                        p.getId(), p.getName(), p.getStartTime(), p.getEndTime()))
                 .toList();
 
         return new BookingDTO(
