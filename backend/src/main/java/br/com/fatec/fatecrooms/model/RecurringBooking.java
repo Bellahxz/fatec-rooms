@@ -50,8 +50,9 @@ public class RecurringBooking {
     private String notes;
 
     /**
-     * Dias da semana como lista JSON: ["MONDAY","WEDNESDAY"] ou ["SATURDAY"]
-     * Valores possíveis: MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY
+     * Dias da semana em que a reserva ocorre, como JSON array de strings.
+     * Valores: MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY.
+     * Para turmas com has_saturday = 0, SATURDAY é proibido.
      */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "week_days", nullable = false, columnDefinition = "json")

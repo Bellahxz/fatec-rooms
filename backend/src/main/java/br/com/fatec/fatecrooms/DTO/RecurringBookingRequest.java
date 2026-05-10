@@ -25,9 +25,11 @@ public class RecurringBookingRequest {
     private List<Integer> periodIds;
 
     /**
-     * Dias da semana: MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY.
-     * Para turmas de sábado, deve conter apenas ["SATURDAY"].
-     * Para turmas normais, deve conter de 1 a 5 dias úteis.
+     * Dias da semana em que a reserva ocorre.
+     * Valores aceitos: MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY.
+     * SATURDAY só é permitido se a turma tiver has_saturday = true.
+     * Não é necessário incluir todos os dias — o coordenador escolhe quais dias
+     * a turma tem aula presencial (ex: algumas turmas são híbridas).
      */
     @NotEmpty(message = "Selecione ao menos um dia da semana.")
     private List<String> weekDays;

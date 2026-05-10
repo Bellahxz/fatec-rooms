@@ -1,81 +1,50 @@
 -- V14__create_class_groups_table.sql
--- Turmas: compostas por curso + semestre_ordinal (1º, 2º, 3º...) + período (Manhã, Tarde, Noite, Sábado).
--- São geradas automaticamente por um evento de inicialização ou via stored procedure.
--- Semestre_ordinal = semestre do curso (1 a 6 para tecnólogos / 1 a 8 para bacharelados).
+-- Turmas: curso + semestre_ordinal (1º–6º) + período (Manhã/Tarde/Noite).
+-- Cursos com has_saturday = 1 ganham uma flag extra; o sábado é um dia adicional
+-- de aula, não um turno exclusivo. Todas as turmas têm aula nos dias úteis.
+-- A coluna has_saturday na turma indica se ela também tem aula aos sábados.
 
 CREATE TABLE IF NOT EXISTS class_groups (
-                                            class_group_id   INT UNSIGNED     NOT NULL AUTO_INCREMENT,
-                                            course_id        INT UNSIGNED     NOT NULL,
-                                            course_semester  TINYINT UNSIGNED NOT NULL COMMENT 'Semestre do curso: 1, 2, 3, ...',
-                                            shift            ENUM('MORNING','AFTERNOON','EVENING','SATURDAY') NOT NULL,
-    label            VARCHAR(100)     NOT NULL COMMENT 'Ex: 3º ADS Manhã',
-    active           TINYINT UNSIGNED NOT NULL DEFAULT 1,
-    created_at       DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                            class_group_id  INT UNSIGNED     NOT NULL AUTO_INCREMENT,
+                                            course_id       INT UNSIGNED     NOT NULL,
+                                            course_semester TINYINT UNSIGNED NOT NULL COMMENT 'Semestre do curso: 1 a 6',
+                                            shift           ENUM('MORNING','AFTERNOON','EVENING') NOT NULL,
+    has_saturday    TINYINT UNSIGNED NOT NULL DEFAULT 0
+    COMMENT 'Herda do curso: 1 = também tem aula de sábado',
+    label           VARCHAR(100)     NOT NULL COMMENT 'Ex: 3º ADS Manhã',
+    active          TINYINT UNSIGNED NOT NULL DEFAULT 1,
+    created_at      DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (class_group_id),
     UNIQUE KEY uq_class_group (course_id, course_semester, shift),
-    CONSTRAINT fk_cg_course FOREIGN KEY (course_id) REFERENCES courses(course_id) ON DELETE CASCADE
+    CONSTRAINT fk_cg_course FOREIGN KEY (course_id)
+    REFERENCES courses(course_id) ON DELETE CASCADE
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Stored procedure para gerar turmas automaticamente para todos os cursos
-DELIMITER $$
+-- Gera turmas para todos os cursos: 6 semestres × 3 turnos
+-- Cursos com has_saturday = 1 recebem has_saturday = 1 em todas as suas turmas
 
-CREATE PROCEDURE generate_class_groups()
-BEGIN
-    DECLARE done INT DEFAULT FALSE;
-    DECLARE v_course_id INT UNSIGNED;
-    DECLARE v_abbreviation VARCHAR(20);
-    DECLARE v_has_saturday TINYINT UNSIGNED;
-    DECLARE v_max_semesters TINYINT UNSIGNED;
-    DECLARE v_sem INT;
-
-    DECLARE cur CURSOR FOR
-SELECT course_id, abbreviation, has_saturday FROM courses WHERE active = 1;
-DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
-
-OPEN cur;
-
-read_loop: LOOP
-        FETCH cur INTO v_course_id, v_abbreviation, v_has_saturday;
-        IF done THEN
-            LEAVE read_loop;
-END IF;
-
-        -- Tecnólogos têm 6 semestres (padrão Fatec)
-        SET v_max_semesters = 6;
-        SET v_sem = 1;
-
-        WHILE v_sem <= v_max_semesters DO
-            -- Período Manhã
-            INSERT IGNORE INTO class_groups (course_id, course_semester, shift, label)
-            VALUES (v_course_id, v_sem, 'MORNING',
-                    CONCAT(v_sem, 'º ', v_abbreviation, ' Manhã'));
-
-            -- Período Tarde
-            INSERT IGNORE INTO class_groups (course_id, course_semester, shift, label)
-            VALUES (v_course_id, v_sem, 'AFTERNOON',
-                    CONCAT(v_sem, 'º ', v_abbreviation, ' Tarde'));
-
-            -- Período Noite
-            INSERT IGNORE INTO class_groups (course_id, course_semester, shift, label)
-            VALUES (v_course_id, v_sem, 'EVENING',
-                    CONCAT(v_sem, 'º ', v_abbreviation, ' Noite'));
-
-            -- Período Sábado (apenas cursos com has_saturday = 1)
-            IF v_has_saturday = 1 THEN
-                INSERT IGNORE INTO class_groups (course_id, course_semester, shift, label)
-                VALUES (v_course_id, v_sem, 'SATURDAY',
-                        CONCAT(v_sem, 'º ', v_abbreviation, ' Sábado'));
-END IF;
-
-            SET v_sem = v_sem + 1;
-END WHILE;
-
-END LOOP;
-
-CLOSE cur;
-END$$
-
-DELIMITER ;
-
--- Executa a procedure para popular as turmas
-CALL generate_class_groups();
+INSERT INTO class_groups (course_id, course_semester, shift, has_saturday, label)
+SELECT
+    c.course_id,
+    s.sem,
+    t.shift,
+    c.has_saturday,
+    CONCAT(s.sem, 'º ', c.abbreviation, ' ',
+           CASE t.shift
+               WHEN 'MORNING'   THEN 'Manhã'
+               WHEN 'AFTERNOON' THEN 'Tarde'
+               WHEN 'EVENING'   THEN 'Noite'
+               END
+    ) AS label
+FROM courses c
+         CROSS JOIN (
+    SELECT 1 AS sem UNION SELECT 2 UNION SELECT 3
+    UNION SELECT 4  UNION SELECT 5  UNION SELECT 6
+) s
+         CROSS JOIN (
+    SELECT 'MORNING'   AS shift UNION
+    SELECT 'AFTERNOON' UNION
+    SELECT 'EVENING'
+) t
+WHERE c.active = 1
+ORDER BY c.course_id, s.sem, t.shift;

@@ -15,40 +15,34 @@ public class RecurringBookingDTO {
 
     private Integer id;
 
-    // Semestre acadêmico
     private Integer semesterId;
-    private String semesterName;
+    private String  semesterName;
 
-    // Sala
     private Integer roomId;
-    private String roomName;
-    private String roomLocation;
+    private String  roomName;
+    private String  roomLocation;
 
-    // Turma
     private Integer classGroupId;
-    private String classGroupLabel;
+    private String  classGroupLabel;
     private ClassGroup.Shift shift;
+    private boolean classGroupHasSaturday;
 
-    // Curso
     private Integer courseId;
-    private String courseName;
-    private String courseAbbreviation;
+    private String  courseName;
+    private String  courseAbbreviation;
 
-    // Quem criou
     private Integer createdById;
-    private String createdByUsername;
+    private String  createdByUsername;
 
-    // Períodos
     private List<PeriodSummary> periods;
 
-    // Configuração de recorrência
+    // Dias da semana selecionados.
     private List<String> weekDays;
 
-    private String subject;
-    private String notes;
+    private String  subject;
+    private String  notes;
     private RecurringBooking.Status status;
 
-    // Estatísticas de instâncias
     private int totalInstances;
     private int activeInstances;
     private int cancelledInstances;
@@ -61,7 +55,7 @@ public class RecurringBookingDTO {
     @AllArgsConstructor
     public static class PeriodSummary {
         private Integer periodId;
-        private String periodName;
+        private String  periodName;
         private LocalTime periodStart;
         private LocalTime periodEnd;
     }

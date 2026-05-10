@@ -26,12 +26,16 @@ public class ClassGroupService {
     }
 
     public ClassGroupDTO findById(Integer id) {
-        ClassGroup cg = classGroupRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada: " + id));
-        return toDTO(cg);
+        return toDTO(classGroupRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Turma não encontrada: " + id)));
     }
 
     public ClassGroupDTO toDTO(ClassGroup cg) {
+        String shiftLabel = switch (cg.getShift()) {
+            case MORNING   -> "Manhã";
+            case AFTERNOON -> "Tarde";
+            case EVENING   -> "Noite";
+        };
         return new ClassGroupDTO(
                 cg.getId(),
                 cg.getCourse().getId(),
@@ -39,6 +43,8 @@ public class ClassGroupService {
                 cg.getCourse().getAbbreviation(),
                 cg.getCourseSemester(),
                 cg.getShift(),
+                shiftLabel,
+                cg.getHasSaturday() == 1,
                 cg.getLabel(),
                 cg.getActive() == 1
         );

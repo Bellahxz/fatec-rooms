@@ -1,4 +1,3 @@
-// ─── RecurringBookingInstanceRepository.java ──────────────────────────────────
 package br.com.fatec.fatecrooms.repository;
 
 import br.com.fatec.fatecrooms.model.RecurringBookingInstance;

@@ -13,8 +13,11 @@ import java.time.LocalDateTime;
         uniqueConstraints = @UniqueConstraint(columnNames = {"course_id", "course_semester", "shift"}))
 public class ClassGroup {
 
+    /**
+     * Se has_saturday = 1, a turma também tem aula aos sábados (dia adicional).
+     */
     public enum Shift {
-        MORNING, AFTERNOON, EVENING, SATURDAY
+        MORNING, AFTERNOON, EVENING
     }
 
     @Id
@@ -32,6 +35,9 @@ public class ClassGroup {
     @Enumerated(EnumType.STRING)
     @Column(name = "shift", nullable = false, length = 20)
     private Shift shift;
+
+    @Column(name = "has_saturday", columnDefinition = "tinyint UNSIGNED not null")
+    private Byte hasSaturday = 0;
 
     @Column(name = "label", nullable = false, length = 100)
     private String label;
