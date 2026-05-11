@@ -1973,3 +1973,459 @@ margin:10px;
 }
 
 .spacer { height: 32px; }
+
+/* ══════════════════════════════════════════
+   RESERVA RECORRENTE
+══════════════════════════════════════════ */
+
+/* Layout principal */
+.content-recorrente {
+  padding: 40px 32px 40px;
+  background: var(--white);
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+/* ── Lado esquerdo (calendário) ── */
+.box-calendario-recorrente {
+  width: 560px;
+  flex: 0 0 560px;
+  padding: 24px;
+  background: var(--gray-100);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.title-calendario {
+  padding: 0 0 2px 2px;
+}
+
+.title-calendario h3 {
+  font-family: var(--font-main);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin-bottom: 4px;
+}
+
+.title-calendario p {
+  font-size: 13px;
+  color: var(--gray-500);
+}
+
+/* ── Calendário — altura fixa exibindo só o mês atual ── */
+.box-calendario-recorrente .react-calendar {
+  width: 100%;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 18px 16px;
+  font-family: var(--font-body);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.07);
+  border: none;
+  overflow: hidden;
+}
+
+.box-calendario-recorrente .react-calendar__navigation {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 14px;
+  width: 72%;
+}
+
+.box-calendario-recorrente .react-calendar__navigation__label {
+  font-size: 13px;
+  font-weight: 700;
+  padding: 7px 16px;
+  border-radius: 1.5rem;
+  background: linear-gradient(90deg, var(--red-light), var(--red-dark));
+  color: var(--white);
+  cursor: pointer;
+  border: none;
+  white-space: nowrap;
+}
+
+.box-calendario-recorrente .react-calendar__navigation__prev2-button,
+.box-calendario-recorrente .react-calendar__navigation__next2-button {
+  display: none;
+}
+
+.box-calendario-recorrente .react-calendar__navigation__prev-button,
+.box-calendario-recorrente .react-calendar__navigation__next-button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--red-dark);
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 8px;
+  transition: background var(--transition);
+}
+
+.box-calendario-recorrente .react-calendar__navigation__prev-button:hover,
+.box-calendario-recorrente .react-calendar__navigation__next-button:hover {
+  background: var(--gray-100);
+}
+
+/* Dias da semana */
+.box-calendario-recorrente .react-calendar__month-view__weekdays {
+  display: grid !important;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--gray-200);
+  padding-bottom: 6px;
+}
+
+.box-calendario-recorrente .react-calendar__month-view__weekdays__weekday {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-500);
+  padding: 4px 0;
+}
+
+.box-calendario-recorrente .react-calendar__month-view__weekdays__weekday abbr {
+  text-decoration: none;
+}
+
+.box-calendario-recorrente .react-calendar__month-view__weekdays__weekday:first-child {
+  color: #c62828;
+}
+
+/* Grade de dias */
+.box-calendario-recorrente .react-calendar__month-view__days {
+  display: grid !important;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.box-calendario-recorrente .react-calendar__tile {
+  height: 38px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.box-calendario-recorrente .react-calendar__tile:hover {
+  background: var(--gray-100);
+}
+
+.box-calendario-recorrente .react-calendar__tile--now {
+  border: 2px solid var(--red-dark);
+  font-weight: 700;
+}
+
+.box-calendario-recorrente .react-calendar__tile--active {
+  background: #067cdddc !important;
+  color: white;
+  font-weight: 600;
+}
+
+/* Esconde dias de meses vizinhos */
+.box-calendario-recorrente .react-calendar__month-view__days__day--neighboringMonth {
+  visibility: hidden;
+}
+
+.box-calendario-recorrente .react-calendar__tile:disabled {
+  background: transparent;
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Dia recorrente — só cor, sem bolinha */
+.dia-recorrente {
+  background: #FFF0F0 !important;
+  color: var(--red-dark) !important;
+  font-weight: 700;
+}
+
+/* ── Legenda ── */
+.legenda-recorrente {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  padding: 0 2px;
+}
+
+.legenda-recorrente > div {
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
+.box-legenda {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+  margin-right: 5px;
+  flex-shrink: 0;
+}
+
+/* ── Box reservas recorrentes ── */
+.reservas-recorrentes-box {
+  max-height: 190px;
+  background-color: var(--white);
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--gray-200);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+}
+
+.topo-reservas-recorrentes h4 {
+  font-family: var(--font-main);
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: var(--gray-800);
+}
+
+.lista-recorrentes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.lista-recorrentes::-webkit-scrollbar { width: 5px; }
+.lista-recorrentes::-webkit-scrollbar-thumb {
+  background: var(--gray-200);
+  border-radius: 10px;
+}
+
+.item-recorrente {
+  background: var(--gray-100);
+  padding: 10px 12px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.2s;
+}
+
+.item-recorrente:hover { background: var(--gray-200); }
+
+.bolinha-recorrente {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--red);
+  flex-shrink: 0;
+}
+
+.info-recorrente {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.info-recorrente h5 {
+  font-family: var(--font-main);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gray-800);
+  margin: 0;
+}
+
+.info-recorrente p {
+  font-size: 12px;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+.info-recorrente span {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--red-dark);
+}
+
+/* ── Lado direito (formulário) — mesma largura, alinhado ao topo ── */
+.box-form-recorrente {
+  width: 560px;
+  flex: 0 0 560px;
+  padding: 24px 24px 28px;
+  background: var(--gray-100);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.box-form-recorrente form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Grupos de campo */
+.form-group-recorrente {
+  margin-bottom: 14px;
+}
+
+.form-group-recorrente label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gray-500);
+  margin-bottom: 6px;
+  font-family: var(--font-main);
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+}
+
+.form-group-recorrente input,
+.form-group-recorrente select {
+  width: 100%;
+  padding: 13px 16px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 12px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  background: var(--white);
+  color: var(--gray-800);
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.form-group-recorrente input:focus,
+.form-group-recorrente select:focus {
+  border-color: var(--red);
+  background: white;
+}
+
+.form-group-recorrente select {
+  appearance: none;
+  cursor: pointer;
+}
+
+/* Linha de horário */
+.horario-recorrente {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: center;
+}
+
+.horario-recorrente span {
+  font-family: var(--font-main);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--gray-500);
+  white-space: nowrap;
+}
+
+.horario-recorrente input {
+  flex: 1;
+  width: auto;
+}
+
+/* Seletor de dias — ocupa toda a largura igualmente */
+.dias-semana {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+.dia-btn {
+  flex: 1;
+  padding: 11px 0;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 10px;
+  background: var(--white);
+  font-family: var(--font-main);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gray-500);
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: center;
+}
+
+.dia-btn:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.dia-btn.ativo {
+  background: var(--red);
+  border-color: var(--red);
+  color: var(--white);
+}
+
+/* Botão reservar */
+.btn-recorrente {
+  display: block;
+  margin-top: 18px;
+  padding: 14px 20px;
+  background-color: var(--red);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-main);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background var(--transition), transform 0.15s;
+  width: 100%;
+  height: 50px;
+}
+
+.btn-recorrente:hover {
+  background-color: var(--red-dark);
+  transform: translateY(-1px);
+}
+
+.btn-recorrente:active {
+  transform: translateY(0);
+}
+
+/* ── Responsivo ── */
+@media (max-width: 1200px) {
+  .box-calendario-recorrente,
+  .box-form-recorrente {
+    width: 480px;
+    flex: 0 0 480px;
+  }
+}
+
+@media (max-width: 1020px) {
+  .content-recorrente {
+    flex-direction: column;
+    padding: 24px 16px;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .box-calendario-recorrente,
+  .box-form-recorrente {
+    width: 100%;
+    flex: none;
+  }
+
+  .box-calendario-recorrente .react-calendar__navigation {
+    width: 85%;
+  }
+
+  .dias-semana { flex-wrap: wrap; }
+
+  .dia-btn {
+    flex: 0 0 calc(33.33% - 5px);
+  }
+}
